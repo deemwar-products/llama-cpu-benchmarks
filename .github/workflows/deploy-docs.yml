@@ -35,40 +35,73 @@ jobs:
           node-version: '20'
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Sync results/ to docs/public/api/ (with host sanitization)
+      - name: Build summary + sync results/ to docs/public/api/
         run: |
           mkdir -p docs/public/api/cells
-          sanitize() {
-            python3 -c "
-          import json, sys
-          src, dst = sys.argv[1], sys.argv[2]
-          with open(src) as f: data = json.load(f)
+          python3 <<'PY'
+          import json, os, glob, time
+
           def scrub(o):
               if isinstance(o, dict):
                   if 'host' in o and isinstance(o['host'], str):
                       o['host'] = 'shared-cpu-host'
-                  for v in o.values(): scrub(v)
+                  for v in o.values():
+                      scrub(v)
               elif isinstance(o, list):
-                  for v in o: scrub(v)
-          scrub(data)
-          with open(dst, 'w') as f: json.dump(data, f, indent=2)
-          " "$1" "$2"
+                  for v in o:
+                      scrub(v)
+
+          cells = []
+          for f in sorted(glob.glob('results/*.json')):
+              name = os.path.basename(f)
+              if name in ('summary.json', 'results.json'): continue
+              if name.endswith('.harness') or name.endswith('.bench.json'): continue
+              try:
+                  with open(f) as fp:
+                      d = json.load(fp)
+              except Exception as exc:
+                  print(f'skipping {name}: {exc}')
+                  continue
+              scrub(d)
+              with open(f'docs/public/api/cells/{name}', 'w') as fp:
+                  json.dump(d, fp, indent=2)
+              cells.append(d)
+
+          def row(c):
+              return {
+                  'cell_id': c.get('cell_id'),
+                  'model_id': c.get('model_id'),
+                  'weight_quant': c.get('weight_quant'),
+                  'kv_quant': c.get('kv_quant'),
+                  'gen_eval_tps': (c.get('throughput') or {}).get('gen_eval_tps'),
+                  'prompt_eval_tps': (c.get('throughput') or {}).get('prompt_eval_tps'),
+                  'p50_ms': (c.get('latency_ms') or {}).get('p50'),
+                  'p95_ms': (c.get('latency_ms') or {}).get('p95'),
+                  'overall_pass': (c.get('tool_calling') or {}).get('overall_pass'),
+                  'format_pass_rate': (c.get('tool_calling') or {}).get('format_pass_rate'),
+                  'n_cases': c.get('n_cases'),
+              }
+
+          summary = {
+              'generated_at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+              'host': 'shared-cpu-host',
+              'n_cells': len(cells),
+              'cells': [row(c) for c in cells],
+              'full': cells,
           }
-          if [ -f results/summary.json ]; then
-            sanitize results/summary.json docs/public/api/summary.json
-            cp docs/public/api/summary.json docs/public/api/results.json
-          else
-            echo '{"status":"pending","cells":[]}' > docs/public/api/summary.json
-            cp docs/public/api/summary.json docs/public/api/results.json
-          fi
-          if ls results/*.json >/dev/null 2>&1; then
-            for f in results/*.json; do
-              name=$(basename "$f")
-              if [ "$name" != "summary.json" ]; then
-                sanitize "$f" "docs/public/api/cells/$name"
-              fi
-            done
-          fi
+
+          if not cells:
+              summary = {'status': 'pending', 'cells': []}
+
+          with open('docs/public/api/summary.json', 'w') as fp:
+              json.dump(summary, fp, indent=2)
+          with open('docs/public/api/results.json', 'w') as fp:
+              json.dump(summary, fp, indent=2)
+
+          print(f'built summary with {len(cells)} cells')
+          for c in cells:
+              print(f'  - {c.get("cell_id")}: {(c.get("tool_calling") or {}).get("overall_pass")}% / {(c.get("throughput") or {}).get("gen_eval_tps")} tok/s')
+          PY
           ls -R docs/public/api/
       - run: pnpm run docs:build
       - uses: actions/configure-pages@v4

@@ -130,7 +130,7 @@ merged = {
     "weight_quant": "Q4_K_M",
     "kv_quant": "${KV_MODE}",
     "llamacpp_variant": "${IMAGE}",
-    "host": "deemwar-prod-app-1",
+    "host": "shared-cpu-host",
     "throughput": {
         "prompt_eval_tps": prompt_tps,
         "gen_eval_tps": gen_tps,

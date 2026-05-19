@@ -1,18 +1,25 @@
 # llama-local-benchmarks
 
-Benchmarks for small (~4B) open-weight tool-calling LLMs on commodity Hetzner CPU hardware (deemwar prod-app-1).
+Benchmarks for small (~4B) open-weight tool-calling LLMs on a commodity x86 CPU box.
 
-Compares **Qwen3.5-4B** vs **Gemma-4-4B** vs **Phi-4-mini** under **standard** vs **TurboQuant** KV-cache compression — measuring tool-calling accuracy, throughput, and memory.
+Compares **Qwen3.5-4B** vs **Gemma-4-E4B-it** vs **Phi-4-mini** under **standard** vs **TurboQuant** KV-cache compression — measuring tool-calling accuracy, throughput, and memory.
 
-## Status
+## Live site
 
-Draft spec: [`docs/specs/llama-cpp-turboquant-benchmark.md`](docs/specs/llama-cpp-turboquant-benchmark.md)
+**https://deemwar-products.github.io/llama-local-benchmarks/**
+
+- [Findings article](https://deemwar-products.github.io/llama-local-benchmarks/article)
+- [Results table](https://deemwar-products.github.io/llama-local-benchmarks/results)
+- [Spec](https://deemwar-products.github.io/llama-local-benchmarks/specs/llama-cpp-turboquant-benchmark)
+- [API JSON](https://deemwar-products.github.io/llama-local-benchmarks/api/summary.json)
 
 ## Layout
 
 ```
-docs/specs/   experiment spec(s) — review before running
-harness/      Python BFCL test harness
-scripts/      build + run helpers (Docker, llama.cpp variants)
-results/      per-cell JSON + aggregate summary (created on first run)
+docs/specs/    experiment spec(s) — read before running
+docs/          VitePress site sources
+harness/       Python BFCL test harness
+scripts/       per-cell driver shell scripts
+endpoint/      optional stdlib HTTP service serving results JSON
+results/       per-cell JSON + aggregate summary (created on run)
 ```

@@ -46,7 +46,7 @@ export default defineConfig({
       },
     ],
     footer: {
-      message: 'Benchmarks run on deemwar prod-app-1 · Xeon E-2176G · CPU-only',
+      message: 'Benchmarks run on a single shared CPU host · Xeon E-2176G · CPU-only',
       copyright: '© 2026 deemwar-products',
     },
   },

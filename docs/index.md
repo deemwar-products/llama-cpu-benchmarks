@@ -4,7 +4,7 @@ layout: home
 hero:
   name: llama-local-benchmarks
   text: Small-model tool-calling on a commodity CPU box
-  tagline: Qwen 3.5 × Gemma 4 × Phi-4-mini, with and without TurboQuant KV-cache compression, on deemwar prod-app-1.
+  tagline: Qwen 3.5 × Gemma 4 × Phi-4-mini, with and without TurboQuant KV-cache compression, on a single commodity CPU box.
   actions:
     - theme: brand
       text: Read the findings →
@@ -20,14 +20,14 @@ features:
   - title: 6-cell matrix
     details: 3 models × 2 KV-cache settings (standard FP16 vs TurboQuant turbo3) at Q4_K_M weights, 100 BFCL-style tool-calling cases each.
   - title: Real production hardware
-    details: Xeon E-2176G, 6c/12t, 62 GB RAM, AVX2, no GPU. Same box that serves live reqsume + video-ai workloads, with cgroup caps to keep prod tenants safe.
+    details: Xeon E-2176G, 6c/12t, 62 GB RAM, AVX2, no GPU. Shared with other workloads via strict cgroup caps so the benchmark can't disturb them.
   - title: Open, reproducible
     details: Public GitHub repo, MIT-licensed harness, raw per-cell JSONs, live HTTP endpoint serving the same data the article cites.
 ---
 
 ## What this is
 
-A head-to-head of the three best open-weight ~4B tool-calling instruct models available as of May 2026 — **Qwen 3.5 4B**, **Google gemma-4-E4B-it**, **Microsoft Phi-4-mini-instruct** — measured on a single commodity Hetzner CPU box, with and without **TurboQuant** (Google DeepMind, ICLR 2026) KV-cache compression.
+A head-to-head of the three best open-weight ~4B tool-calling instruct models available as of May 2026 — **Qwen 3.5 4B**, **Google gemma-4-E4B-it**, **Microsoft Phi-4-mini-instruct** — measured on a single commodity x86 CPU box, with and without **TurboQuant** (Google DeepMind, ICLR 2026) KV-cache compression.
 
 ## What it answers
 

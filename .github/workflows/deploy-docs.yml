@@ -35,12 +35,28 @@ jobs:
           node-version: '20'
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Sync results/ to docs/public/api/
+      - name: Sync results/ to docs/public/api/ (with host sanitization)
         run: |
           mkdir -p docs/public/api/cells
+          sanitize() {
+            python3 -c "
+          import json, sys
+          src, dst = sys.argv[1], sys.argv[2]
+          with open(src) as f: data = json.load(f)
+          def scrub(o):
+              if isinstance(o, dict):
+                  if 'host' in o and isinstance(o['host'], str):
+                      o['host'] = 'shared-cpu-host'
+                  for v in o.values(): scrub(v)
+              elif isinstance(o, list):
+                  for v in o: scrub(v)
+          scrub(data)
+          with open(dst, 'w') as f: json.dump(data, f, indent=2)
+          " "$1" "$2"
+          }
           if [ -f results/summary.json ]; then
-            cp results/summary.json docs/public/api/summary.json
-            cp results/summary.json docs/public/api/results.json
+            sanitize results/summary.json docs/public/api/summary.json
+            cp docs/public/api/summary.json docs/public/api/results.json
           else
             echo '{"status":"pending","cells":[]}' > docs/public/api/summary.json
             cp docs/public/api/summary.json docs/public/api/results.json
@@ -48,7 +64,9 @@ jobs:
           if ls results/*.json >/dev/null 2>&1; then
             for f in results/*.json; do
               name=$(basename "$f")
-              [ "$name" != "summary.json" ] && cp "$f" "docs/public/api/cells/$name" || true
+              if [ "$name" != "summary.json" ]; then
+                sanitize "$f" "docs/public/api/cells/$name"
+              fi
             done
           fi
           ls -R docs/public/api/

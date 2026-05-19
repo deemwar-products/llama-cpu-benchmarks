@@ -19,19 +19,19 @@ CORS: `Access-Control-Allow-Origin: *`.
 RESULTS_DIR=./results PORT=8765 python3 server.py
 ```
 
-## Run on `deemwar prod-app-1`
+## Run in Docker
 
 ```bash
 docker build -t llamabench-endpoint:latest endpoint/
 docker run -d --restart=unless-stopped \
   --name llamabench-endpoint \
   --cpus=0.5 --memory=256m \
-  -v /opt/llamabench/results:/results:ro \
+  -v $(pwd)/results:/results:ro \
   -p 8765:8765 \
   llamabench-endpoint:latest
 ```
 
-Bound to host port 8765. Routed publicly via existing kamal-proxy if a hostname is added; otherwise reachable over the WireGuard tunnel at `10.8.0.2:8765`.
+Binds the container's port 8765 to the host. Expose publicly through whatever proxy / firewall rules your host uses — there are no secrets in the response.
 
 ## Why stdlib only
 

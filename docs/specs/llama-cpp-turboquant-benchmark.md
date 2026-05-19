@@ -4,7 +4,7 @@
 **Status:** Draft v1 · awaiting Muthu's approval
 **Date:** 2026-05-20
 **Driver:** Muthukumaran Navaneethakrishnan
-**Target host:** `ssh-prod-app-deemwar` (deemwar prod-app-1, Hetzner, WireGuard `10.8.0.2`)
+**Target host:** a single shared CPU box (identity intentionally omitted in public docs)
 
 ---
 
@@ -26,12 +26,12 @@ Benchmark the three best open-weight small (~4B) edge models from Qwen, Google, 
 |---|---|
 | CPU | Intel Xeon E-2176G — 6c/12t @ 3.7 GHz, AVX2 yes, **AVX-512 no** |
 | RAM | 62 GB total, ~60 GB available (38 GB reclaimable from buff/cache) |
-| Disk | 847 GB on `/dev/md2`, 766 GB free |
+| Disk | 847 GB total, 766 GB free |
 | GPU | Intel UHD P630 iGPU (no CUDA, Vulkan possible but out-of-scope) |
 | OS | Ubuntu 22.04.5 LTS, kernel 5.15.0-164 |
-| Live tenants | `reqsume-*`, `video-ai-*`, `video-worker`, `video-http`, `promtail`, `kamal-proxy` |
+| Other workloads | host is shared with unrelated production containers — benchmark must not starve them |
 
-**Implication:** CPU-only inference. Speed bound by AVX2 throughput, not memory. Live prod workloads share the box — benchmark must be cgroup-isolated.
+**Implication:** CPU-only inference. Speed bound by AVX2 throughput, not memory. Other workloads share the box — benchmark must be cgroup-isolated.
 
 ## 4. Model Matrix
 
@@ -102,9 +102,9 @@ cmake --build build --config Release -j$(nproc)
 
 Falls back to forks #2/#3/#4 in order if #1 fails to build or run on AVX2-only CPU.
 
-### 8.3 Production-safety constraints (mandatory)
+### 8.3 Host-sharing constraints (mandatory)
 
-All benchmark runs are wrapped in Docker with strict resource caps to avoid disturbing the live `reqsume-*` and `video-ai-*` tenants:
+All benchmark runs are wrapped in Docker with strict resource caps to avoid disturbing other workloads:
 
 ```bash
 docker run --rm \
@@ -117,10 +117,10 @@ docker run --rm \
   ${cmd}
 ```
 
-- **Pinned to cores 8-11** (4 cores). Cores 0-7 left to prod tenants.
+- **Pinned to cores 8-11** (4 cores). Cores 0-7 left to the rest of the system.
 - **12 GB memory cap** (~6 GB model + 6 GB headroom).
-- **Off-peak window**: runs scheduled 02:00-06:00 IST or weekend mornings (low video-ai/reqsume traffic). Per-run runtime ≤30 min.
-- **Kill switch**: if host load_avg(1m) > 8.0 or prod healthchecks fail, abort the run.
+- **Off-peak window**: runs scheduled in low-traffic windows. Per-run runtime ≤30 min.
+- **Kill switch**: if host `load_avg(1m)` > 8.0, abort the run.
 
 ### 8.4 Run flags (per cell)
 
@@ -143,7 +143,7 @@ llama-server --model /models/${model}-Q4_K_M.gguf \
 
 ### Phase 0 — Feasibility (1-2 hours, blocking gate)
 
-1. Clone & build candidate TurboQuant fork (#1) on prod-app-1 inside Docker.
+1. Clone & build candidate TurboQuant fork (#1) inside Docker on the benchmark host.
 2. Run `llama-cli` smoke test with **Gemma-4-2B-Q4_K_M** + `--cache-type-k turbo3 --cache-type-v turbo3` and a one-tool prompt.
 3. Gate criteria:
    - (a) Build succeeds on AVX2-only x86, no GPU/Metal required.
@@ -198,7 +198,7 @@ Per cell, written to `results/${cell_id}.json`:
   "weight_quant": "Q4_K_M",
   "kv_quant": "turbo3",
   "llamacpp_variant": "atomicmilkshake/llama-cpp-turboquant@<sha>",
-  "host": "deemwar-prod-app-1",
+  "host": "shared-cpu-host",
   "throughput": {
     "prompt_eval_tps": 0.0,
     "gen_eval_tps": 0.0
@@ -270,7 +270,7 @@ If TurboQuant fails the "no regression" gate on this hardware, **the recommendat
 
 1. **Success-bar numbers** — accept defaults in §12 (10 tok/s, 70% overall_pass, 95% format, 6 GB RSS), or override?
 2. **Fork preference** — start Phase 0 with `atomicmilkshake/llama-cpp-turboquant` (default), or another?
-3. **Off-peak window** — confirm 02:00-06:00 IST is safe for prod tenants on prod-app-1 (or pick a different window)?
+3. **Off-peak window** — confirm an off-peak window safe for co-tenant workloads.
 4. **BFCL subset adequacy** — do you have internal tool-calling traces from `reqsume` / `video-ai` we should add as a Cat-4 evaluation set?
 5. **Phi-4-mini vs Phi-4 multimodal** — confirm we test the text-only `Phi-4-mini-instruct`, not the multimodal variant (multimodal adds vision tokens which skew tool-call benchmarks).
 

@@ -10,3 +10,8 @@ results/raw/
 *.gguf
 models/
 .DS_Store
+
+# Operational handoff with internal details — local only
+HANDOFF.local.md
+CLAUDE.local.md
+*.local.md

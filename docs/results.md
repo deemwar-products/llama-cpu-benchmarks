@@ -29,12 +29,12 @@ const fmt = (v, d = 1) => (v == null ? '—' : Number(v).toFixed(d))
 
 <div v-else-if="pending" style="border:1px solid #ccc;padding:1em;border-radius:6px;background:#fafafa;">
   <strong>No results yet.</strong> The benchmark sweep hasn't landed in <code>docs/public/api/summary.json</code>.
-  Run the sweep on <code>prod-app-1</code> and push to <code>main</code> — the CI will redeploy this page.
+  Run the sweep on the target host and push to <code>main</code> — the CI will redeploy this page.
 </div>
 
 <template v-else>
 
-Generated **{{ generated }}** · host **deemwar-prod-app-1** · {{ cells.length }} cells
+Generated **{{ generated }}** · {{ cells.length }} cells
 
 | Cell | Model | KV | gen tok/s | prompt tok/s | p50 ms | p95 ms | Tool overall | Format pass |
 |---|---|---|---:|---:|---:|---:|---:|---:|

@@ -20,6 +20,7 @@ from urllib.parse import urlparse
 
 RESULTS_DIR = os.environ.get("RESULTS_DIR", "/results")
 PORT = int(os.environ.get("PORT", "8765"))
+HOST_LABEL = os.environ.get("HOST_LABEL", "shared-cpu-host")
 
 CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
@@ -64,7 +65,7 @@ def build_summary(cells: list[dict]) -> dict:
 
     return {
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "host": "deemwar-prod-app-1",
+        "host": HOST_LABEL,
         "n_cells": len(cells),
         "cells": [row(c) for c in cells],
         "full": cells,
@@ -102,7 +103,7 @@ class Handler(BaseHTTPRequestHandler):
                 200,
                 {
                     "service": "llama-local-benchmarks",
-                    "host": "deemwar-prod-app-1",
+                    "host": HOST_LABEL,
                     "endpoints": ["/results", "/results/<cell_id>", "/healthz"],
                     "available_cell_ids": ids,
                 },

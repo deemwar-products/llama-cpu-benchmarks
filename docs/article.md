@@ -8,7 +8,7 @@
 
 ## The question
 
-You want to put a small open-weight model behind a tool-calling API on a single Hetzner-class box. No GPU. Shared with other production tenants. **Which model do you ship, and does the new TurboQuant KV-cache compression buy you anything?**
+You want to put a small open-weight model behind a tool-calling API on a single commodity x86 CPU box. No GPU. Shared with other workloads. **Which model do you ship, and does the new TurboQuant KV-cache compression buy you anything?**
 
 I tested the three best ~4B open-weight tool-callers available as of May 2026:
 
@@ -20,7 +20,7 @@ Each at **Q4_K_M** imatrix weights, twice — once with normal FP16 KV cache, on
 
 ## The setup
 
-Same shared production box that already runs `reqsume`, `video-ai`, and `kamal-proxy`:
+A single shared CPU box already busy with other unrelated workloads:
 
 | | |
 |---|---|
@@ -29,7 +29,7 @@ Same shared production box that already runs `reqsume`, `video-ai`, and `kamal-p
 | GPU | None usable for inference (Intel UHD only) |
 | OS | Ubuntu 22.04.5 |
 
-Every benchmark container was cgroup-pinned to **4 cores (8-11) and 12 GB**, so the cores prod tenants use (0-7) stay untouched. No `apt install` on the host — everything runs in `ghcr.io/ggml-org/llama.cpp:full`.
+Every benchmark container was cgroup-pinned to **4 cores (8-11) and 12 GB**, leaving cores 0-7 free for the rest of the system. No `apt install` on the host — everything runs in `ghcr.io/ggml-org/llama.cpp:full`.
 
 ## Two early surprises
 
@@ -129,9 +129,9 @@ Read the [results page](/results) for the exact numbers. The decision tree:
 ## What I'd change next
 
 - Add Granite 3.x as a 4th model — IBM's small tool-caller has trended up on BFCL v4.
-- Run the same matrix on a **Hetzner GPU** (RTX 4000 SFF Ada) for ~$60/mo to see if TurboQuant's speed claims land when the CUDA path is actually used.
-- Add a **real tool-calling trace** from `reqsume` as a category-4 evaluation set — embedded BFCL cases are clean, but production traces are gnarly.
+- Run the same matrix on a **rented GPU box** (e.g. RTX 4000 SFF Ada) for ~$60/mo to see if TurboQuant's speed claims land when the CUDA path is actually used.
+- Add **real production tool-calling traces** as a category-4 evaluation set — the embedded BFCL cases are clean and synthetic, but production traces are gnarly.
 
 ## Footnotes
 
-The full spec — including prod-safety guard rails, the exact docker run flags, the 35 BFCL cases used, and the success-criteria thresholds — lives at [`/specs/llama-cpp-turboquant-benchmark`](/specs/llama-cpp-turboquant-benchmark). Repo: [`deemwar-products/llama-local-benchmarks`](https://github.com/deemwar-products/llama-local-benchmarks). Harness is MIT-licensed, no external dependencies, runs anywhere `python3` lives.
+The full spec — including the host-sharing guard rails, the exact docker run flags, the 35 BFCL cases used, and the success-criteria thresholds — lives at [`/specs/llama-cpp-turboquant-benchmark`](/specs/llama-cpp-turboquant-benchmark). Repo: [`deemwar-products/llama-local-benchmarks`](https://github.com/deemwar-products/llama-local-benchmarks). Harness is MIT-licensed, no external dependencies, runs anywhere `python3` lives.

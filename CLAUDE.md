@@ -4,17 +4,18 @@ This repo benchmarks the three best open-weight ~4B tool-calling instruct models
 
 Read this file before doing anything in the repo.
 
-## Target host
+## Target host (general shape)
 
-All benchmark execution runs on **`ssh-prod-app-deemwar`** (deemwar prod-app-1, Hetzner, WireGuard `10.8.0.2`). This is a **live production box** sharing the host with `reqsume-*`, `video-ai-*`, `kamal-proxy`, etc.
+All benchmark execution runs on a **shared CPU host** (specific identity intentionally kept out of this public file — see `CLAUDE.local.md` if present for operational details). The host concurrently runs **other unrelated workloads**, so every benchmark container must stay cgroup-isolated.
 
 Hard rules when running anything on that host:
 
-1. **Always cgroup-cap.** Every benchmark container must use `--cpus=4 --cpuset-cpus=8-11 --memory=12g --memory-swap=12g`. Cores 0-7 are reserved for prod tenants.
-2. **Off-peak windows only** for new runs: early IST morning, or weekends.
+1. **Always cgroup-cap.** Every benchmark container must use `--cpus=4 --cpuset-cpus=8-11 --memory=12g --memory-swap=12g`. Cores 0-7 are reserved for the rest of the system.
+2. **Off-peak windows only** for new runs.
 3. **Workspace is `/opt/llamabench/`** on the host — never write benchmark artifacts elsewhere.
 4. **Models live in `/opt/llamabench/models/`** as raw GGUF files. They are gitignored.
 5. **Never `apt install` on the host.** Use the prebuilt llama.cpp Docker images, or build from source inside a throwaway `ubuntu:22.04` container.
+6. **Never expose internal hostnames, IPs, or co-tenant app names in any committed file** — this repo is public.
 
 ## Layout
 
@@ -25,7 +26,7 @@ docs/                  VitePress site (deployed to GitHub Pages)
   public/api/          static JSON endpoints served from the site
 harness/               BFCL Python test harness (run_bfcl.py + bfcl_subset.json)
 scripts/               per-cell driver shell scripts (run_cell.sh, etc.)
-endpoint/              stdlib HTTP service serving results JSON on prod-app-1
+endpoint/              stdlib HTTP service serving results JSON
 results/               per-cell JSON + aggregated summary.json (created on run)
 .github/workflows/     CI for VitePress deploy
 ```
@@ -41,7 +42,7 @@ Weight quant is constant: **Q4_K_M imatrix** (Bartowski / Unsloth). Only the KV 
 
 ## To re-run one cell
 
-On `prod-app-1`:
+On the target host:
 
 ```bash
 cd /opt/llamabench
@@ -62,16 +63,14 @@ for m in "qwen3.5-4b_std:Qwen3.5-4B-Q4_K_M.gguf:fp16" \
 done
 ```
 
-TQ cells require a TurboQuant-capable llama.cpp build (see `results/` for the recorded image tag and `docs/specs/llama-cpp-turboquant-benchmark.md` §7-8). Today none of the listed forks have an upstream CPU-only AVX2 image — we built and pushed our own to a local registry.
+TQ cells require a TurboQuant-capable llama.cpp build (see `results/` for the recorded image tag and `docs/specs/llama-cpp-turboquant-benchmark.md` §7-8).
 
 ## To publish updates
 
 Push to `main`. The `Deploy VitePress docs` workflow:
-1. Copies `results/*.json` into `docs/public/api/`.
+1. Copies `results/*.json` into `docs/public/api/` and strips any `host:` field from the JSON (sanitization step).
 2. Builds VitePress.
 3. Deploys to GitHub Pages → `https://deemwar-products.github.io/llama-local-benchmarks/`.
-
-The live HTTP endpoint on `prod-app-1` (port 8765 → host) reads `/opt/llamabench/results/` directly and reflects updates without redeploying.
 
 ## When changing the harness
 
@@ -81,12 +80,13 @@ The live HTTP endpoint on `prod-app-1` (port 8765 → host) reads `/opt/llamaben
 
 ## Hard rules (do not violate)
 
-- Never `apt install` on `prod-app-1` — always use Docker.
+- Never `apt install` on the benchmark host — always use Docker.
 - Never run a benchmark without the cgroup caps in §1.
 - Never `git push --force` to `main` of this repo — the GitHub Pages deploy reads from `main`.
 - Never commit `*.gguf` files (gitignored).
-- Never paste contents of `~/muthu/gitworkspace/infra-workspace/vps/infra/vault/` or any `*.env` file into anything (per global `CLAUDE.md`).
+- Never paste contents of any vault directory or `*.env` file into anything.
+- Never expose internal hostnames, IPs, SSH aliases, or co-tenant app names in committed files.
 
 ## Re-using the harness elsewhere
 
-`harness/run_bfcl.py` works against any OpenAI-compatible `/v1/chat/completions` endpoint that emits `tool_calls` in the standard shape, or smuggles a tool call into `message.content` as a fenced JSON blob. Tested against `llama-server --jinja`. Should also work against vLLM, Ollama (with `tool_choice: auto`), and the OpenAI API.
+`harness/run_bfcl.py` works against any OpenAI-compatible `/v1/chat/completions` endpoint that emits `tool_calls` in the standard shape, or smuggles a tool call into `message.content` as a fenced JSON blob. Tested against `llama-server --jinja`. Should also work against vLLM, Ollama, and the OpenAI API.

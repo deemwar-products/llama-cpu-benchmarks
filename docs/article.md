@@ -155,11 +155,13 @@ The headline experiment finding — Gemma wins on accuracy and latency, Phi need
 
 ## Recommendation
 
-Read the [results page](/results) for the exact numbers. The decision tree:
+For a small open-weight tool-calling model behind a CPU-only API on commodity x86, **today**:
 
-1. **If you need predictable, supported, easy** — ship `std` (stock llama.cpp) with whichever of the three models wins on overall_pass. Re-evaluate TurboQuant in 3 months when upstream lands.
-2. **If you need to squeeze edge memory** (running on a 4-8 GB box, not this one) — try TurboQuant with the same model as #1, accept a small accuracy delta.
-3. **If you have GPU headroom** — different article. Use vLLM, ignore everything here.
+1. **Ship `gemma-4-E4B-it` at Q4_K_M with stock `llama.cpp:full --jinja`.** 94.3 % overall, 100 % on parallel calls, 6.2 s p50, 8.6 gen tok/s, fits in ~5 GB RAM, Apache 2.0. No tricks, no patches.
+2. **If you specifically need raw speed over accuracy** — Qwen 3.5 4B at 9.79 tok/s vs Gemma's 8.59. The gap on accuracy (91.4 vs 94.3) is small but real; the throughput gap is ~13 %. If your tool calls are simple-single-tool, Qwen is fine. For multi-tool selection and parallel calls, Gemma is the safer pick.
+3. **Avoid Phi-4-mini for drop-in tool-calling** until either Microsoft's GGUF chat template is updated or llama.cpp's tool-format parser learns Phi-4. You can recover ~75 % with a system-prompt workaround, but you lose parallel-call support entirely and you've taken on a brittle hand-rolled integration.
+4. **Skip TurboQuant on CPU.** Re-evaluate in three months when upstream llama.cpp merges KV-cache quantization. If your bottleneck is KV memory specifically (long-context workloads on small VRAM), and you can run Apple Silicon, the `PippBauda/llama.cpp-turboquant-mtp` Metal fork is a real option *today*.
+5. **Production-safety still matters more than any of this.** The cgroup caps (`--cpus=4 --cpuset-cpus=8-11 --memory=12g`) and the off-peak run window are what kept this experiment from disturbing the live tenants on the same box. If you're running inference next to other production workloads, design that in from day one.
 
 ## What I'd change next
 

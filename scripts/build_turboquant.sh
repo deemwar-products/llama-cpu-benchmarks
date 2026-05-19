@@ -43,11 +43,10 @@ for entry in "${FORKS[@]}"; do
   log="${LOG_DIR}/tq-build-${fork}.log"
   : > "${log}"
 
-  # Build inside ubuntu:22.04 with cgroup-pinned resources that don't touch
-  # cores 8-11 (those are the benchmark cores) or interfere with prod tenants
-  # more than the existing share. Use cores 4-7 with cap and modest memory.
+  # Build inside ubuntu:22.04 cgroup-pinned to 2 cores (deliberately gentle —
+  # earlier 4-core attempt pushed host load avg over 35). Use cores 4-5.
   docker run --rm --name "tq-build-${fork}" \
-    --cpus=4 --cpuset-cpus=4-7 --memory=8g --memory-swap=8g \
+    --cpus=2 --cpuset-cpus=4-5 --memory=8g --memory-swap=8g \
     -v "${BUILD_HOST}:/work" \
     ubuntu:22.04 \
     bash -lc "
@@ -59,20 +58,18 @@ for entry in "${FORKS[@]}"; do
       rm -rf src
       git clone --depth 1 --branch '${branch}' '${url}' src 2>&1 | tail -5
       cd src
-      # Try cmake with TurboQuant; CPU-only, no CUDA.
       mkdir -p build
       cd build
       cmake .. \
         -DCMAKE_BUILD_TYPE=Release \
         -DGGML_NATIVE=ON -DGGML_AVX2=ON \
         -DGGML_CUDA=OFF -DGGML_METAL=OFF -DGGML_VULKAN=OFF \
-        2>&1 | tail -30
-      cmake --build . --target llama-server llama-bench --config Release -j4 2>&1 | tail -30
-      ls -la bin/llama-server bin/llama-bench 2>/dev/null || ls -la llama-server llama-bench 2>/dev/null
-      # Try to detect the turbo3 KV flag in llama-server --help
+        2>&1 | tail -20
+      cmake --build . --target llama-server llama-bench --config Release -j2 2>&1 | tail -40
       BIN=\$(find . -name llama-server -type f -executable | head -1)
       if [ -z \"\${BIN}\" ]; then echo 'NO_BINARY'; exit 31; fi
-      \$BIN --help 2>&1 | grep -iE 'turbo|cache-type' | head -10 || true
+      echo \"=== help-tail ===\"
+      \$BIN --help 2>&1 | grep -iE 'turbo|cache-type-(k|v)' | head -10 || true
     " >>"${log}" 2>&1
 
   rc=$?

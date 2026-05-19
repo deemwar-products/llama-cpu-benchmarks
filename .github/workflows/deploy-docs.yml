@@ -63,6 +63,13 @@ jobs:
                   print(f'skipping {name}: {exc}')
                   continue
               scrub(d)
+              # only treat as a cell if it has a cell_id (skip ancillary files
+              # like build-status.json, etc.)
+              if not isinstance(d, dict) or 'cell_id' not in d:
+                  with open(f'docs/public/api/cells/{name}', 'w') as fp:
+                      json.dump(d, fp, indent=2)
+                  print(f'  ancillary: {name} (no cell_id)')
+                  continue
               with open(f'docs/public/api/cells/{name}', 'w') as fp:
                   json.dump(d, fp, indent=2)
               cells.append(d)

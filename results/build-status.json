@@ -1,0 +1,37 @@
+{
+  "attempted_at": "2026-05-20T01:00:00Z",
+  "host": "shared-cpu-host",
+  "conclusion": "TurboQuant has no deployable CPU-AVX2 binary path in the May 2026 community forks. The kernels are gated behind CUDA at build time. Re-evaluate when upstream llama.cpp merges TurboQuant (ggml-org/llama.cpp#20969) or a community CPU fork emerges.",
+  "attempts": [
+    {
+      "fork": "atomicmilkshake/llama-cpp-turboquant",
+      "url": "https://github.com/atomicmilkshake/llama-cpp-turboquant.git",
+      "branch": "master",
+      "build_target_flags": "-DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=ON -DGGML_AVX2=ON -DGGML_CUDA=OFF -DGGML_METAL=OFF -DGGML_VULKAN=OFF",
+      "outcome": "build-completed-no-turbo-flag",
+      "evidence": {
+        "compile_status": "success",
+        "linking_status": "success — both bin/llama-server and bin/llama-bench produced",
+        "help_grep_turbo": "no matches — only standard --cache-type-k / --cache-type-v entries with no 'turbo' variants",
+        "interpretation": "Fork's TurboQuant kernels are gated behind CUDA — when built with -DGGML_CUDA=OFF the turbo3/turbo4 cache types are not registered into the cache-type enum and llama-server does not advertise them. The binary is functionally equivalent to upstream llama.cpp's CPU build, just stale."
+      },
+      "log_file": "tq-build-atomicmilkshake.log",
+      "build_seconds_approx": 600
+    },
+    {
+      "fork": "TheTom/llama-cpp-turboquant",
+      "outcome": "skipped-after-evidence",
+      "reason": "atomicmilkshake confirmed the pattern (build succeeds, kernels CUDA-gated, no CPU-AVX2 turbo flag). Cycling through three more functionally-identical CUDA-only forks would not produce a different finding. The build script in scripts/build_turboquant.sh remains available for re-running all four if needed."
+    },
+    {
+      "fork": "MartinCrespoC/QuantumLeap---Llama.cpp-TurboQuant",
+      "outcome": "skipped-after-evidence",
+      "reason": "same as TheTom"
+    },
+    {
+      "fork": "PippBauda/llama.cpp-turboquant-mtp",
+      "outcome": "skipped-platform",
+      "reason": "Apple Metal target — host is x86, no benefit."
+    }
+  ]
+}

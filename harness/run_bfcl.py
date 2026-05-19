@@ -189,9 +189,28 @@ def run(args: argparse.Namespace) -> int:
     latencies_ms: list[float] = []
 
     for idx, case in enumerate(tests, 1):
+        messages: list[dict[str, Any]] = []
+        if args.system_prompt:
+            sp = args.system_prompt
+            if "{TOOLS_JSON}" in sp:
+                tools_brief = json.dumps(
+                    [
+                        {
+                            "name": t["function"]["name"],
+                            "description": t["function"].get("description", ""),
+                            "parameters": t["function"].get("parameters", {}),
+                        }
+                        for t in case["tools"]
+                    ],
+                    separators=(",", ":"),
+                )
+                sp = sp.replace("{TOOLS_JSON}", tools_brief)
+            messages.append({"role": "system", "content": sp})
+        messages.append({"role": "user", "content": case["query"]})
+
         payload = {
             "model": args.model_id,
-            "messages": [{"role": "user", "content": case["query"]}],
+            "messages": messages,
             "tools": case["tools"],
             "tool_choice": "auto",
             "temperature": 0.0,
@@ -288,6 +307,11 @@ def main() -> int:
     p.add_argument("--limit", type=int, default=0)
     p.add_argument("--max-tokens", type=int, default=128)
     p.add_argument("--timeout", type=int, default=180)
+    p.add_argument(
+        "--system-prompt",
+        default=None,
+        help="Optional system message prepended to every case. '{TOOLS_JSON}' is replaced with a compact JSON dump of the case's tools.",
+    )
     args = p.parse_args()
     return run(args)
 

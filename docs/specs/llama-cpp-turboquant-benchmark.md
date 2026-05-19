@@ -10,7 +10,7 @@
 
 ## 1. Goal
 
-Benchmark the three best open-weight small (~4B) edge models from Qwen, Google, and Microsoft on a single production-class CPU box, head-to-head on **tool-calling accuracy**, **throughput (tokens/sec)**, and **memory footprint** — with and without **TurboQuant** (Google DeepMind, ICLR 2026) KV-cache compression. Produce a decision-grade table that says: which model + quant config we ship for edge / local-LLM workloads on commodity Hetzner hardware.
+Benchmark the three best open-weight small (~4B) edge models from Qwen, Google, and Microsoft on a single production-class CPU box, head-to-head on **tool-calling accuracy**, **throughput (tokens/sec)**, and **memory footprint** — with and without **TurboQuant** (Google DeepMind, ICLR 2026) KV-cache compression. Produce a decision-grade table that says: which model + quant config we ship for edge / local-LLM workloads on commodity x86 CPU hardware.
 
 ## 2. Non-goals
 

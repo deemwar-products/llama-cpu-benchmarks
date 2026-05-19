@@ -1,0 +1,8 @@
+{
+  "status": "pending",
+  "generated_at": null,
+  "host": "deemwar-prod-app-1",
+  "n_cells": 0,
+  "cells": [],
+  "note": "Awaiting benchmark sweep results. The deploy workflow replaces this file with the real summary when results/summary.json is committed."
+}

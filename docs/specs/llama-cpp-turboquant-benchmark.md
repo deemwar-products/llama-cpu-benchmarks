@@ -40,12 +40,12 @@ Three best-in-class ~4B instruct models with native tool-calling, May 2026:
 | Vendor | Model | Params | Context | Tool-calling | License | GGUF source |
 |---|---|---|---|---|---|---|
 | Alibaba | `Qwen3.5-4B-Instruct` | 4B | 128K | Native (Qwen tool format) | Apache 2.0 | Bartowski / Unsloth |
-| Google | `Gemma-4-4B` | 4B | 128K | Native (6 dedicated tool tokens) | Apache 2.0 | google/ggml-org |
+| Google | `gemma-4-E4B-it` | ~4B effective (MatFormer) | 128K | Native (6 dedicated tool tokens) | Apache 2.0 | unsloth/ggml-org/bartowski |
 | Microsoft | `Phi-4-mini-instruct` | 3.8B | 128K | Native (JSON schema) | MIT | Bartowski / microsoft |
 
 **Why these three:**
 - **Qwen3.5-4B**: Qwen series has led BFCL in its weight class for most of 2025-26.
-- **Gemma-4-4B**: Released 2026-04-02, purpose-built for edge/mobile with dedicated tool-call special tokens (`<|tool>`, `<|tool_call>`, `<|tool_result>`).
+- **gemma-4-E4B-it**: Released 2026-04-02, purpose-built for edge/mobile with dedicated tool-call special tokens (`<|tool>`, `<|tool_call>`, `<|tool_result>`). The `E4B` variant uses Google's MatFormer architecture — ~4B "effective" parameters at runtime.
 - **Phi-4-mini**: Microsoft's flagship small tool-caller — built-in function calling, JSON schema, 200K vocab, 128K context.
 
 ## 5. Quantization Matrix
@@ -62,9 +62,9 @@ Three best-in-class ~4B instruct models with native tool-calling, May 2026:
 ## 6. Full Run Matrix (6 cells)
 
 ```
-                Qwen3.5-4B   Gemma-4-4B   Phi-4-mini
-    std/Q4_K_M       1            2            3
-    tq/Q4_K_M        4            5            6
+                Qwen3.5-4B   gemma-4-E4B   Phi-4-mini
+    std/Q4_K_M       1            2             3
+    tq/Q4_K_M        4            5             6
 ```
 
 ## 7. TurboQuant fork choice

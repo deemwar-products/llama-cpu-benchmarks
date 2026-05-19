@@ -1,0 +1,44 @@
+{
+  "cell_id": "phi-4-mini_std_workaround",
+  "model_id": "phi-4-mini",
+  "weight_quant": "Q4_K_M",
+  "kv_quant": "fp16",
+  "llamacpp_variant": "ghcr.io/ggml-org/llama.cpp:full + tools-in-system-prompt workaround",
+  "host": "shared-cpu-host",
+  "throughput": {
+    "prompt_eval_tps": null,
+    "gen_eval_tps": null
+  },
+  "memory": {
+    "peak_rss_str": null
+  },
+  "latency_ms": {
+    "p50": 7983.35,
+    "p95": 19645.79,
+    "mean": 9365.64
+  },
+  "tool_calling": {
+    "format_pass_rate": 77.14,
+    "function_accuracy": 77.14,
+    "argument_accuracy": 74.29,
+    "overall_pass": 74.29
+  },
+  "by_category": {
+    "multiple_function": {
+      "n": 10,
+      "overall_pass": 90.0
+    },
+    "parallel": {
+      "n": 5,
+      "overall_pass": 0.0
+    },
+    "simple": {
+      "n": 20,
+      "overall_pass": 85.0
+    }
+  },
+  "n_cases": 35,
+  "started_at": "2026-05-19T20:42:56Z",
+  "duration_sec": 332.44,
+  "notes": "Same Q4_K_M weights + FP16 KV as phi-4-mini_std. The harness was run with a tools-in-system-prompt that explicitly tells the model to emit JSON of form {name, arguments}. This works around the GGUF chat-template gap where llama.cpp falls back to chat_format peg-native and does not surface tool schemas to Phi-4-mini natively."
+}

@@ -1,6 +1,6 @@
-# Running tool-calling LLMs on a Hetzner box
+# Three small tool-calling LLMs on a shared CPU box
 
-**Or: does TurboQuant actually help on a CPU-only edge machine?**
+**Or: which 4B model do you ship — Qwen, Gemma, or Phi — and does TurboQuant help on CPU?**
 
 *Published 2026-05-20 · benchmarks live at [/results](/results) · raw data at [/api](/api)*
 
@@ -47,7 +47,18 @@ Each cell boots `llama-server` in Docker with the model + KV setting under test,
 
 Strict pass = format ∧ function ∧ argument. All numbers in the [results table](/results) are means of two `llama-bench` runs; latencies are end-to-end wall-clock from the harness, including TCP round-trip.
 
-## Results
+## Headline numbers (std cells, what landed)
+
+| Model | gen tok/s | p50 ms | Tool overall |
+|---|---:|---:|---:|
+| **gemma-4-E4B-it** | 8.59 | **6,240** | **94.3 %** |
+| **Qwen 3.5 4B** | 9.79 | 13,739 | 91.4 % |
+| Phi-4-mini-instruct *(drop-in)* | 10.62 | 7,517 | **0.0 %** (see §Phi anomaly) |
+| Phi-4-mini-instruct *(+ system prompt)* | n/a | 7,983 | 74.3 % |
+
+The clear winner on accuracy *and* end-to-end latency is **gemma-4-E4B-it** — and remarkably, **100 % on both multi-function selection and parallel calls** within the 35-case subset. Phi-4-mini ships broken-out-of-the-box for tool-calling under `llama.cpp --jinja` and recovers most of the way with a hand-rolled prompt — see the dedicated section.
+
+## Live numbers (refreshes when the workflow redeploys)
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
@@ -90,13 +101,34 @@ const winner = computed(() => {
 
 The full per-cell table — including prompt eval tok/s, format-pass-rate, argument accuracy, and by-category breakdowns — is on the **[results page](/results)**.
 
+## The Phi anomaly
+
+Phi-4-mini-instruct doesn't tool-call out of the box with `llama.cpp --jinja`. Here's what happened on closer inspection:
+
+- llama.cpp's chat-format detector logs `Chat format: peg-native` when Phi-4 loads — meaning it didn't recognise the model's tool-calling format and fell back to a generic prose parser. For comparison, Gemma logged `peg-gemma4` and Qwen got its own Qwen3 format.
+- With no tool schemas surfaced to the model, Phi responds in **prose** ("you can find weather at weather.com…") to tool-able queries. With `tool_choice: required` it invents Python-like syntax (`get_weather_celsius("Tokyo")`). Either way the `tool_calls[]` field is empty → 0 % on the strict scoring rubric.
+- This isn't the *model* being unable — Phi-4-mini emits perfect tool-call JSON the moment you give it the tool schemas in a system prompt, with no llama.cpp changes. We re-ran Phi with a one-line tools-in-system-prompt workaround and the same 35 cases: **74.3 % overall** (`phi-4-mini_std_workaround` cell). 17/20 simple, 9/10 multiple-function, **0/5 parallel** — the workaround prompt unlocks single-tool calls but not the JSON-array shape for parallel.
+
+So the practical advice is:
+
+- **If you want Phi-4-mini and you're using llama.cpp's drop-in `--jinja` tool-calling**, expect ~0 % until either Microsoft's GGUF chat template is updated or llama.cpp adds a Phi-4 tool-format parser.
+- **If you can prepend a tools-in-system-prompt**, Phi handles single-call cases fine (~85 % on simple) but falls off a cliff on parallel calls — you'd need more prompt engineering or a different model.
+- **If you want drop-in **with parallel calls** that work today** — ship **Gemma-4-E4B** (100 % parallel) or Qwen-3.5-4B (80 % parallel).
+
 ## Reading the matrix
 
 There are two questions to answer separately.
 
 ### Q1: Which model is the best small tool-caller?
 
-For the standard (FP16 KV) row, look at `*_std` overall_pass. The three models converge surprisingly close at the ~4B parameter class — but where they differ is on **parallel calls** (asking the model to emit two `get_weather` calls in one response). That category is where small Qwen and Gemma have historically traded blows on BFCL, and Phi-4-mini's training emphasis on JSON schema gives it a leg up on format compliance.
+On this matrix, **gemma-4-E4B-it** wins outright in the drop-in `--jinja` integration:
+
+- **94.3 % overall pass** vs Qwen 3.5's 91.4 % vs Phi-4-mini's 0 % (broken integration, see anomaly above).
+- **100 % on multiple-function** (correctly picks the right tool from a list of 3) and **100 % on parallel** (emits two correct calls when asked).
+- 90 % on simple — slightly behind Qwen's 95 %, but the gap is two cases.
+- And surprisingly, **gemma's end-to-end p50 is 6.2 s** vs Qwen's 13.7 s, despite Gemma being marginally slower on raw `gen_eval_tps` (8.59 vs 9.79). Gemma emits *shorter* answers — fewer wasted tokens around the tool call.
+
+Qwen 3.5's strength is **simple cases** (95 %) and somewhat better raw throughput. It's the safer pick if you have any concern about Gemma's MatFormer behaviour under unusual load patterns — but on this 35-case set, Gemma's the clean choice.
 
 ### Q2: Does TurboQuant pay off?
 

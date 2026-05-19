@@ -1,0 +1,43 @@
+{
+  "cell_id": "qwen3.5-4b_std",
+  "model_id": "qwen3.5-4b_std",
+  "weight_quant": "Q4_K_M",
+  "kv_quant": "fp16",
+  "llamacpp_variant": "ghcr.io/ggml-org/llama.cpp:full",
+  "host": "shared-cpu-host",
+  "throughput": {
+    "prompt_eval_tps": 35.85,
+    "gen_eval_tps": 9.79
+  },
+  "memory": {
+    "peak_rss_str": "4.536GiB"
+  },
+  "latency_ms": {
+    "p50": 13738.63,
+    "p95": 19325.27,
+    "mean": 14005.06
+  },
+  "tool_calling": {
+    "format_pass_rate": 97.14,
+    "function_accuracy": 97.14,
+    "argument_accuracy": 91.43,
+    "overall_pass": 91.43
+  },
+  "by_category": {
+    "multiple_function": {
+      "n": 10,
+      "overall_pass": 90.0
+    },
+    "parallel": {
+      "n": 5,
+      "overall_pass": 80.0
+    },
+    "simple": {
+      "n": 20,
+      "overall_pass": 95.0
+    }
+  },
+  "n_cases": 35,
+  "started_at": "2026-05-19T20:20:51Z",
+  "duration_sec": 495.06
+}

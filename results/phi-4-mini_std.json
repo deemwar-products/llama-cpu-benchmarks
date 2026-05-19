@@ -1,0 +1,43 @@
+{
+  "cell_id": "phi-4-mini_std",
+  "model_id": "phi-4-mini_std",
+  "weight_quant": "Q4_K_M",
+  "kv_quant": "fp16",
+  "llamacpp_variant": "ghcr.io/ggml-org/llama.cpp:full",
+  "host": "shared-cpu-host",
+  "throughput": {
+    "prompt_eval_tps": 32.08,
+    "gen_eval_tps": 10.62
+  },
+  "memory": {
+    "peak_rss_str": "2.146GiB"
+  },
+  "latency_ms": {
+    "p50": 7517.19,
+    "p95": 20043.15,
+    "mean": 8656.31
+  },
+  "tool_calling": {
+    "format_pass_rate": 0.0,
+    "function_accuracy": 0.0,
+    "argument_accuracy": 0.0,
+    "overall_pass": 0.0
+  },
+  "by_category": {
+    "multiple_function": {
+      "n": 10,
+      "overall_pass": 0.0
+    },
+    "parallel": {
+      "n": 5,
+      "overall_pass": 0.0
+    },
+    "simple": {
+      "n": 20,
+      "overall_pass": 0.0
+    }
+  },
+  "n_cases": 35,
+  "started_at": "2026-05-19T20:34:45Z",
+  "duration_sec": 302.67
+}

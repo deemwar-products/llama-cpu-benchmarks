@@ -1,0 +1,43 @@
+{
+  "cell_id": "gemma-4-e4b_std",
+  "model_id": "gemma-4-e4b_std",
+  "weight_quant": "Q4_K_M",
+  "kv_quant": "fp16",
+  "llamacpp_variant": "ghcr.io/ggml-org/llama.cpp:full",
+  "host": "shared-cpu-host",
+  "throughput": {
+    "prompt_eval_tps": 31.16,
+    "gen_eval_tps": 8.59
+  },
+  "memory": {
+    "peak_rss_str": "2.781GiB"
+  },
+  "latency_ms": {
+    "p50": 6240.05,
+    "p95": 9544.62,
+    "mean": 5918.86
+  },
+  "tool_calling": {
+    "format_pass_rate": 94.29,
+    "function_accuracy": 94.29,
+    "argument_accuracy": 94.29,
+    "overall_pass": 94.29
+  },
+  "by_category": {
+    "multiple_function": {
+      "n": 10,
+      "overall_pass": 100.0
+    },
+    "parallel": {
+      "n": 5,
+      "overall_pass": 100.0
+    },
+    "simple": {
+      "n": 20,
+      "overall_pass": 90.0
+    }
+  },
+  "n_cases": 35,
+  "started_at": "2026-05-19T20:30:03Z",
+  "duration_sec": 215.35
+}

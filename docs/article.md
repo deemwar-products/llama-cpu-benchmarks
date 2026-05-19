@@ -132,23 +132,26 @@ Qwen 3.5's strength is **simple cases** (95 %) and somewhat better raw throughpu
 
 ### Q2: Does TurboQuant pay off?
 
-For each model, compare `*_std` vs `*_tq` on three axes:
+This is the more interesting question, and the honest answer turned out to be **no, not yet on commodity AVX2 CPUs**. The full story is in the [TurboQuant build adventure](#the-turboquant-build-adventure) section below. The short version: none of the four community forks I tried (`atomicmilkshake`, `TheTom`, `MartinCrespoC`, `PippBauda`) ship a clean CPU-only AVX2 x86 path as of May 2026, and TurboQuant's published speed wins are H100/Ampere CUDA kernels that don't transfer.
 
-| Axis | What "TurboQuant won" looks like |
-|---|---|
-| **Memory** | KV-cache RSS drops 3-5× (this should be reliable; the math is unambiguous) |
-| **Accuracy** | `overall_pass` stays within ~2 points of std |
-| **Speed** | `gen_tok/s` stays within ±10% of std (CPU path is the gamble) |
-
-The expected outcome on this hardware, going in: **memory wins, but speed loses by 5-15%** because the CUDA kernels TurboQuant ships are GPU-only and the CPU fallback has a small overhead per attention block.
-
-If `*_tq` matches `*_std` on accuracy and the throughput regression is small, the recommendation is clear: ship TurboQuant for the memory headroom. If TurboQuant tanks accuracy or costs more than 15% throughput, ship `std` and revisit when llama.cpp upstream merges the CPU-optimized kernels.
+The good news: on this hardware, **TurboQuant solves a problem you don't have**. KV-cache memory reduction matters when you're squeezing a 100K-context model into 24 GB of VRAM. With 60 GB of free system RAM and 4K context, the KV cache is under a gigabyte. The compression theatre wouldn't have changed any decision.
 
 ## The TurboQuant build adventure
 
-None of the four community forks I tried (`atomicmilkshake`, `TheTom`, `MartinCrespoC`, `PippBauda`) advertise CPU-only AVX2 x86 builds. Most assume CUDA on Turing+ / Ampere, one targets Apple Metal. I attempted a build inside an `ubuntu:22.04` container with `apt-get install cmake build-essential` and the fork's recommended `cmake -B build -DGGML_TURBOQUANT=ON`. Outcome and exact dance documented in [`docs/specs/llama-cpp-turboquant-benchmark.md`](/specs/llama-cpp-turboquant-benchmark) §7 and the article's [results table](/results) — search for the `*_tq` row's `llamacpp_variant` field.
+TurboQuant (Zandieh et al., ICLR 2026) is a real, published technique with strong results — **on GPUs**. The four community llama.cpp forks I tried (`atomicmilkshake/llama-cpp-turboquant`, `TheTom/llama-cpp-turboquant`, `MartinCrespoC/QuantumLeap`, `PippBauda/llama.cpp-turboquant-mtp`) all target one of:
 
-The big takeaway, regardless of the bake-off outcome: **the TurboQuant ecosystem on CPU x86 is still rough.** If you're running on AVX2 commodity CPUs in mid-2026, expect to invest a day in build pipelines before you measure anything. Apple Silicon users (Metal fork) are in a much better spot today.
+- **CUDA SM75+/SM80/SM86** — Turing and Ampere kernels. There's no AVX2 fallback that runs at parity.
+- **Apple Metal** — the `mtp` fork has a working Metal path with ~4.6× KV compression at q8_0 prefill parity, which is genuinely interesting if you're on Apple Silicon. None of that helps an x86 Xeon.
+
+I tried builds inside a clean `ubuntu:22.04` container with `apt-get install cmake build-essential libcurl4-openssl-dev` and the fork's recommended flags (`-DGGML_TURBOQUANT=ON -DGGML_CUDA=OFF`). Detailed outcome lives in [`results/tq-build-status.json`](https://github.com/deemwar-products/llama-local-benchmarks/blob/main/results/tq-build-status.json) and the cell rows on the [results page](/results) where the TurboQuant arm should have been.
+
+The takeaway is unambiguous: **for AVX2 commodity x86 CPUs in May 2026, TurboQuant is not yet a deployable option.** Three things would change that:
+
+1. **llama.cpp upstream merges TurboQuant.** Discussion is active in `ggml-org/llama.cpp#20969`. Once that lands the CPU codepath gets first-class attention.
+2. **A community CPU fork emerges.** The forks above all build successfully in some configurations, but none ship a tested AVX2-only binary as of today.
+3. **You stop caring about commodity CPU.** If you have a GPU available, `vllm` or even stock `llama.cpp` with `-fa on` is a much better baseline than CPU-with-TurboQuant ever will be.
+
+The headline experiment finding — Gemma wins on accuracy and latency, Phi needs help to even tool-call, TurboQuant is GPU-only in practice — is the same regardless of which fork I tried. **No TurboQuant-arm cells were published in the matrix; the [`results/`](https://github.com/deemwar-products/llama-local-benchmarks/tree/main/results) directory and the per-cell API endpoints only contain the `_std` and `_std_workaround` rows.**
 
 ## Recommendation
 

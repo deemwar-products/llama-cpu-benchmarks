@@ -1,0 +1,32 @@
+{
+  "cell_id": "phi-4-mini_ikllama",
+  "model_id": "phi-4-mini",
+  "weight_quant": "Q4_K_M",
+  "kv_quant": "fp16",
+  "llamacpp_variant": "ikawrakow/ik_llama.cpp@40254a5",
+  "host": "shared-cpu-host",
+  "throughput": {
+    "prompt_eval_tps": null,
+    "gen_eval_tps": null
+  },
+  "memory": {
+    "peak_rss_str": null
+  },
+  "latency_ms": {
+    "p50": null,
+    "p95": null,
+    "mean": null
+  },
+  "tool_calling": {
+    "format_pass_rate": null,
+    "function_accuracy": null,
+    "argument_accuracy": null,
+    "overall_pass": null
+  },
+  "by_category": {},
+  "n_cases": 0,
+  "started_at": "2026-05-20T12:42:41Z",
+  "duration_sec": 0,
+  "status": "skipped",
+  "skip_reason": "ik_llama.cpp@40254a5 cannot load Phi-4-mini-instruct-Q4_K_M.gguf \u2014 model loader errors with: check_tensor_dims: tensor output.weight not found. Phi-4 uses tied embeddings (the input embedding matrix doubles as the output projection), and ik_llama.cpp master does not yet handle that tensor layout. The same GGUF loads fine on stock llama.cpp:full and on PR #21089. To unblock this cell ik_llama would need to add tied-embedding support, OR use a Phi-4 GGUF rebuild that exposes a separate output.weight."
+}

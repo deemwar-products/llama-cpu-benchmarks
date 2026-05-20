@@ -1,0 +1,44 @@
+{
+  "cell_id": "phi-4-mini_tbq3",
+  "model_id": "phi-4-mini_tbq3",
+  "weight_quant": "Q4_K_M",
+  "kv_quant": "tbq3_0",
+  "llamacpp_variant": "elusznik/llama.cpp#21089@0aae7d78c7e1c3029cebdbe4c318704d4057c18e",
+  "host": "shared-cpu-host",
+  "throughput": {
+    "prompt_eval_tps": null,
+    "gen_eval_tps": null
+  },
+  "memory": {
+    "peak_rss_str": "1.388GiB"
+  },
+  "latency_ms": {
+    "p50": 26454.47,
+    "p95": 116384.59,
+    "mean": 38747.45
+  },
+  "tool_calling": {
+    "format_pass_rate": 51.43,
+    "function_accuracy": 51.43,
+    "argument_accuracy": 51.43,
+    "overall_pass": 51.43
+  },
+  "by_category": {
+    "multiple_function": {
+      "n": 10,
+      "overall_pass": 70.0
+    },
+    "parallel": {
+      "n": 5,
+      "overall_pass": 0.0
+    },
+    "simple": {
+      "n": 20,
+      "overall_pass": 55.0
+    }
+  },
+  "n_cases": 35,
+  "started_at": "2026-05-20T02:36:52Z",
+  "duration_sec": 1332.73,
+  "notes": "llama-bench was run with -fa 1 (flash-attn) which is required for the tbq3_0 cache type at the model's full ctx (262144); the BFCL harness itself runs at ctx-size 4096 without -fa (matching the std-cell settings)."
+}

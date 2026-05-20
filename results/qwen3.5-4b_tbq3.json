@@ -1,0 +1,44 @@
+{
+  "cell_id": "qwen3.5-4b_tbq3",
+  "model_id": "qwen3.5-4b_tbq3",
+  "weight_quant": "Q4_K_M",
+  "kv_quant": "tbq3_0",
+  "llamacpp_variant": "elusznik/llama.cpp#21089@0aae7d78c7e1c3029cebdbe4c318704d4057c18e",
+  "host": "shared-cpu-host",
+  "throughput": {
+    "prompt_eval_tps": 24.33,
+    "gen_eval_tps": 4.26
+  },
+  "memory": {
+    "peak_rss_str": "1.764GiB"
+  },
+  "latency_ms": {
+    "p50": 30008.35,
+    "p95": 72045.83,
+    "mean": 35686.3
+  },
+  "tool_calling": {
+    "format_pass_rate": 88.57,
+    "function_accuracy": 74.29,
+    "argument_accuracy": 74.29,
+    "overall_pass": 74.29
+  },
+  "by_category": {
+    "multiple_function": {
+      "n": 10,
+      "overall_pass": 80.0
+    },
+    "parallel": {
+      "n": 5,
+      "overall_pass": 0.0
+    },
+    "simple": {
+      "n": 20,
+      "overall_pass": 90.0
+    }
+  },
+  "n_cases": 35,
+  "started_at": "2026-05-20T02:06:35Z",
+  "duration_sec": 1240.34,
+  "notes": "llama-bench was run with -fa 1 (flash-attn) which is required for the tbq3_0 cache type at the model's full ctx (262144); the BFCL harness itself runs at ctx-size 4096 without -fa (matching the std-cell settings) and observed ~2.9 gen tok/s in server timings."
+}

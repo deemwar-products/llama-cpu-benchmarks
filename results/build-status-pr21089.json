@@ -1,0 +1,18 @@
+{
+  "attempted_at": "2026-05-20T01:59:12Z",
+  "pr": 21089,
+  "repo": "elusznik/llama.cpp",
+  "branch": "turboquant-cpu-tbq-pr",
+  "head_sha": "0aae7d78c7e1c3029cebdbe4c318704d4057c18e",
+  "outcome": "success",
+  "build_exit_code": 0,
+  "binary_path": "/opt/llamabench/llamacpp-tq-pr21089/src/build/bin/llama-server",
+  "help_grep": "-ctk,  --cache-type-k TYPE              KV cache data type for K\n                                        tbq3_0, tbq4_0\n-ctv,  --cache-type-v TYPE              KV cache data type for V\n                                        tbq3_0, tbq4_0\n-ctkd, --cache-type-k-draft TYPE        KV cache data type for K for the draft model\n                                        tbq3_0, tbq4_0\n-ctvd, --cache-type-v-draft TYPE        KV cache data type for V for the draft model\n                                        tbq3_0, tbq4_0\n",
+  "build_warnings": [
+    "OpenSSL not found, HTTPS support disabled (cpp-httplib will use plain HTTP only - fine for /v1 localhost)",
+    "ccache not found (no cache; not blocking)"
+  ],
+  "build_command": "cmake -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=ON -DGGML_AVX2=ON -DGGML_CUDA=OFF -DGGML_METAL=OFF -DGGML_VULKAN=OFF -DLLAMA_CURL=ON; cmake --build . --target llama-server llama-bench -j2",
+  "build_container": "ubuntu:22.04, cgroup --cpus=2 --cpuset-cpus=4-5 --memory=8g",
+  "runtime_image": "llamarun:ubuntu22 (ubuntu:22.04 + libgomp1 libstdc++6 libc6 libcurl4)"
+}

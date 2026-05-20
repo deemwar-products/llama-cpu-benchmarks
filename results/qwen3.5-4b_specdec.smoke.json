@@ -1,0 +1,42 @@
+{
+  "cell_id": "qwen3.5-4b_specdec",
+  "model_id": "qwen3.5-4b",
+  "endpoint": "http://127.0.0.1:11434/v1",
+  "tests_file": "bfcl_subset.json",
+  "n_cases": 1,
+  "started_at": "2026-05-20T03:02:03Z",
+  "duration_sec": 2.02,
+  "tool_calling": {
+    "format_pass_rate": 0.0,
+    "function_accuracy": 0.0,
+    "argument_accuracy": 0.0,
+    "overall_pass": 0.0
+  },
+  "latency_ms": {
+    "p50": null,
+    "p95": null,
+    "mean": null
+  },
+  "by_category": {
+    "simple": {
+      "n": 1,
+      "overall_pass": 0.0
+    }
+  },
+  "results": [
+    {
+      "id": "simple_001",
+      "category": "simple",
+      "ok": false,
+      "error": "HTTPError: HTTP Error 503: Service Unavailable",
+      "elapsed_ms": 0.0,
+      "calls": [],
+      "score": {
+        "format": false,
+        "function": false,
+        "argument": false,
+        "overall": false
+      }
+    }
+  ]
+}

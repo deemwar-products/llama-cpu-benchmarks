@@ -1,0 +1,32 @@
+{
+  "cell_id": "gemma-4-e4b_tbq3",
+  "model_id": "gemma-4-e4b",
+  "weight_quant": "Q4_K_M",
+  "kv_quant": "tbq3_0",
+  "llamacpp_variant": "elusznik/llama.cpp#21089@0aae7d78c7e1c3029cebdbe4c318704d4057c18e",
+  "host": "shared-cpu-host",
+  "throughput": {
+    "prompt_eval_tps": null,
+    "gen_eval_tps": null
+  },
+  "memory": {
+    "peak_rss_str": null
+  },
+  "latency_ms": {
+    "p50": null,
+    "p95": null,
+    "mean": null
+  },
+  "tool_calling": {
+    "format_pass_rate": null,
+    "function_accuracy": null,
+    "argument_accuracy": null,
+    "overall_pass": null
+  },
+  "by_category": {},
+  "n_cases": 0,
+  "started_at": "2026-05-20T02:30:54Z",
+  "duration_sec": 0,
+  "status": "skipped",
+  "skip_reason": "PR #21089 branch is based on an older llama.cpp commit (ggml version 0.9.8) that predates Gemma-4 architecture support. Loading gemma-4-E4B-it-Q4_K_M.gguf fails with: \"error loading model architecture: unknown model architecture: 'gemma4'\". Supported gemma archs in this build: gemma, gemma2, gemma3, gemma3n. The std cell ran on ghcr.io/ggml-org/llama.cpp:full which is a newer build with gemma4 support. To unblock this cell the PR would need to be rebased on a current llama.cpp master that has gemma4 weights support, OR use a gemma3 model instead."
+}

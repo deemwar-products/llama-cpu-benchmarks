@@ -18,6 +18,7 @@ onMounted(async () => {
 })
 
 const cells = computed(() => data.value?.cells ?? [])
+const skipped = computed(() => data.value?.skipped ?? [])
 const generated = computed(() => data.value?.generated_at ?? null)
 const pending = computed(() => data.value?.status === 'pending' || cells.value.length === 0)
 const fmt = (v, d = 1) => (v == null ? '—' : Number(v).toFixed(d))
@@ -64,6 +65,27 @@ Generated **{{ generated }}** · {{ cells.length }} cells
     </tr>
   </tbody>
 </table>
+
+<div v-if="skipped.length" style="margin-top:2em">
+
+### Skipped cells
+
+<table class="results-table">
+  <thead>
+    <tr>
+      <th align="left">Cell</th>
+      <th align="left">Reason</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr v-for="c in skipped" :key="c.cell_id">
+      <td><code>{{ c.cell_id }}</code></td>
+      <td>{{ c.skip_reason || 'no data' }}</td>
+    </tr>
+  </tbody>
+</table>
+
+</div>
 
 </template>
 

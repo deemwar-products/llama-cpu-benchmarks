@@ -1,0 +1,44 @@
+{
+  "cell_id": "gemma-4-e4b_ikllama",
+  "model_id": "gemma-4-e4b",
+  "weight_quant": "Q4_K_M",
+  "kv_quant": "fp16",
+  "llamacpp_variant": "ikawrakow/ik_llama.cpp@40254a5 (CPU-only AVX2, IQK matmul + IQK FA kernels)",
+  "host": "shared-cpu-host",
+  "throughput": {
+    "prompt_eval_tps": 38.58,
+    "gen_eval_tps": 7.62
+  },
+  "memory": {
+    "peak_rss_str": null
+  },
+  "latency_ms": {
+    "p50": 5958.74,
+    "p95": 9094.69,
+    "mean": 5885.94
+  },
+  "tool_calling": {
+    "format_pass_rate": 100.0,
+    "function_accuracy": 85.71,
+    "argument_accuracy": 85.71,
+    "overall_pass": 85.71
+  },
+  "by_category": {
+    "multiple_function": {
+      "n": 10,
+      "overall_pass": 100.0
+    },
+    "parallel": {
+      "n": 5,
+      "overall_pass": 0.0
+    },
+    "simple": {
+      "n": 20,
+      "overall_pass": 100.0
+    }
+  },
+  "n_cases": 35,
+  "started_at": "2026-05-20T12:32:26Z",
+  "duration_sec": 208.02,
+  "notes": "Gemma-4-E4B-it on ik_llama.cpp: only 1.05x faster end-to-end p50 (5959 vs 6240 ms) \u2014 Gemma was already efficient on stock llama.cpp. Same parallel-call collapse as Qwen on ik_llama (100% -> 0%) \u2014 points at a master-branch chat-template bug, not a model-specific issue."
+}

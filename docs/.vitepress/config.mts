@@ -11,8 +11,8 @@ export default defineConfig({
   themeConfig: {
     nav: [
       { text: 'Article', link: '/article' },
+      { text: 'Engine bake-off', link: '/article-engines' },
       { text: 'Results', link: '/results' },
-      { text: 'Spec', link: '/specs/llama-cpp-turboquant-benchmark' },
       { text: 'API', link: '/api' },
       {
         text: 'GitHub',
@@ -24,7 +24,8 @@ export default defineConfig({
         text: 'Overview',
         items: [
           { text: 'Home', link: '/' },
-          { text: 'Findings article', link: '/article' },
+          { text: 'TBQ findings article', link: '/article' },
+          { text: 'Engine bake-off (in progress)', link: '/article-engines' },
           { text: 'Results table', link: '/results' },
         ],
       },

@@ -31,7 +31,8 @@ export default defineConfig({
       {
         text: 'Reference',
         items: [
-          { text: 'Spec v1', link: '/specs/llama-cpp-turboquant-benchmark' },
+          { text: 'Spec: TurboQuant bake-off', link: '/specs/llama-cpp-turboquant-benchmark' },
+          { text: 'Spec: Engine bake-off (next)', link: '/specs/cpu-fast-inference-bake-off' },
           { text: 'Hardware target', link: '/hardware' },
           { text: 'HTTP API', link: '/api' },
         ],

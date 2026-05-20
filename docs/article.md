@@ -116,7 +116,7 @@ For 4 K-context interactive tool-calling on commodity AVX2 — knowing the local
 - **[/article-engines](/article-engines)** — the engine bake-off deep dive (this article's source for ik_llama / specdec / TurboQuant numbers).
 - **[/specs/llama-cpp-turboquant-benchmark](/specs/llama-cpp-turboquant-benchmark)** — the original spec covering model picks, hardware target, prod-safety constraints, the 35 BFCL cases.
 - **[/specs/cpu-fast-inference-bake-off](/specs/cpu-fast-inference-bake-off)** — the engine bake-off spec.
-- **Repo (public, MIT)**: [github.com/deemwar-products/llama-local-benchmarks](https://github.com/deemwar-products/llama-local-benchmarks).
+- **Repo (public, MIT)**: [github.com/deemwar-products/llama-cpu-benchmarks](https://github.com/deemwar-products/llama-cpu-benchmarks).
 
 If you find this useful or you have a counter-result on different hardware, please share.
 
@@ -124,4 +124,4 @@ If you find this useful or you have a counter-result on different hardware, plea
 
 Each cell: Docker container with cgroup caps (`--cpus=4 --cpuset-cpus=8-11 --memory=12g`) so the benchmark can't disturb co-tenant workloads. Boot the engine, wait for `/health`, run `llama-bench -p 256 -n 128 -r 2` for throughput, then 35 BFCL-style cases (20 simple + 10 multiple-function with distractors + 5 parallel) via `harness/run_bfcl.py` for tool-calling accuracy. Strict pass = format ∧ function ∧ argument. Latencies are end-to-end wall-clock from the harness, including TCP round-trip.
 
-Spec, harness source, and per-cell JSON all in the [public repo](https://github.com/deemwar-products/llama-local-benchmarks).
+Spec, harness source, and per-cell JSON all in the [public repo](https://github.com/deemwar-products/llama-cpu-benchmarks).

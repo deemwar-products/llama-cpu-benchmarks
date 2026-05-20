@@ -4,11 +4,12 @@ export default defineConfig({
   title: 'I tried 4 LLM speedup techniques on CPU. Three made it slower.',
   description:
     "A week of benchmarks on a Xeon CPU box. TurboQuant ≠ 8× faster, speculative decoding ≠ universal win, ik_llama.cpp breaks parallel calls. Gemma-4-E4B-it on stock llama.cpp wins. Eleven cells, full source, MIT.",
-  base: '/llama-local-benchmarks/',
+  base: '/llama-cpu-benchmarks/',
   cleanUrls: true,
   lastUpdated: true,
   ignoreDeadLinks: [/^\/api\/cells\//],
   themeConfig: {
+    siteTitle: 'llama-cpu-benchmarks',
     nav: [
       { text: 'Article', link: '/article' },
       { text: 'Engine bake-off', link: '/article-engines' },
@@ -16,7 +17,7 @@ export default defineConfig({
       { text: 'API', link: '/api' },
       {
         text: 'GitHub',
-        link: 'https://github.com/deemwar-products/llama-local-benchmarks',
+        link: 'https://github.com/deemwar-products/llama-cpu-benchmarks',
       },
     ],
     sidebar: [
@@ -44,7 +45,7 @@ export default defineConfig({
     socialLinks: [
       {
         icon: 'github',
-        link: 'https://github.com/deemwar-products/llama-local-benchmarks',
+        link: 'https://github.com/deemwar-products/llama-cpu-benchmarks',
       },
     ],
     footer: {

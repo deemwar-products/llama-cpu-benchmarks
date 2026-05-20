@@ -1,15 +1,15 @@
-# Morning handoff — llama-local-benchmarks · 2026-05-20
+# Morning handoff — llama-cpu-benchmarks · 2026-05-20
 
 The autonomous run is complete. Read this from the public-safe angle; the operational specifics (host identity, internal endpoint URL, ssh aliases) are in **`HANDOFF.local.md`** (gitignored).
 
 ## Links
 
-- **Site (deployed):** https://deemwar-products.github.io/llama-local-benchmarks/
-- **Article:** https://deemwar-products.github.io/llama-local-benchmarks/article
-- **Results table:** https://deemwar-products.github.io/llama-local-benchmarks/results
-- **HTTP API (static):** https://deemwar-products.github.io/llama-local-benchmarks/api/summary.json
-- **Spec:** https://deemwar-products.github.io/llama-local-benchmarks/specs/llama-cpp-turboquant-benchmark
-- **Repo (public):** https://github.com/deemwar-products/llama-local-benchmarks
+- **Site (deployed):** https://deemwar-products.github.io/llama-cpu-benchmarks/
+- **Article:** https://deemwar-products.github.io/llama-cpu-benchmarks/article
+- **Results table:** https://deemwar-products.github.io/llama-cpu-benchmarks/results
+- **HTTP API (static):** https://deemwar-products.github.io/llama-cpu-benchmarks/api/summary.json
+- **Spec:** https://deemwar-products.github.io/llama-cpu-benchmarks/specs/llama-cpp-turboquant-benchmark
+- **Repo (public):** https://github.com/deemwar-products/llama-cpu-benchmarks
 
 ## TL;DR (the four numbers)
 
@@ -20,25 +20,25 @@ The autonomous run is complete. Read this from the public-safe angle; the operat
 | phi-4-mini_std | 10.62 | 7,517 | **0.0 %** | broken default integration (see article) |
 | phi-4-mini_std_workaround | n/a | 7,983 | 74.3 % | with tools-in-system-prompt |
 
-**Recommendation:** ship **`gemma-4-E4B-it`** at Q4_K_M with stock `llama.cpp:full --jinja`. Full reasoning in the [article](https://deemwar-products.github.io/llama-local-benchmarks/article#recommendation).
+**Recommendation:** ship **`gemma-4-E4B-it`** at Q4_K_M with stock `llama.cpp:full --jinja`. Full reasoning in the [article](https://deemwar-products.github.io/llama-cpu-benchmarks/article#recommendation).
 
 ## TurboQuant outcome (corrected mid-run)
 
 Initially I concluded "no CPU TurboQuant path exists" — that was wrong. The CPU AVX2 implementation lives in upstream PR [`ggml-org/llama.cpp#21089`](https://github.com/ggml-org/llama.cpp/pull/21089) by `elusznik`, with cache types **`tbq3_0`** (5.19× compression) and **`tbq4_0`** (3.94× compression). I was building the wrong forks (GPU-only, kernels gated behind `GGML_CUDA=ON`) and grep'ing for the wrong flag name (`turbo3` instead of `tbq3_0`).
 
 After you pushed back ("we need to check they have tried differently"), I dispatched a background agent to build PR #21089 and run the three `*_tbq3` cells. Outcome lands in:
-- [`results/qwen3.5-4b_tbq3.json`](https://github.com/deemwar-products/llama-local-benchmarks/blob/main/results/qwen3.5-4b_tbq3.json)
-- [`results/gemma-4-e4b_tbq3.json`](https://github.com/deemwar-products/llama-local-benchmarks/blob/main/results/gemma-4-e4b_tbq3.json)
-- [`results/phi-4-mini_tbq3.json`](https://github.com/deemwar-products/llama-local-benchmarks/blob/main/results/phi-4-mini_tbq3.json)
-- [`results/build-status-pr21089.json`](https://github.com/deemwar-products/llama-local-benchmarks/blob/main/results/build-status-pr21089.json) (build evidence)
+- [`results/qwen3.5-4b_tbq3.json`](https://github.com/deemwar-products/llama-cpu-benchmarks/blob/main/results/qwen3.5-4b_tbq3.json)
+- [`results/gemma-4-e4b_tbq3.json`](https://github.com/deemwar-products/llama-cpu-benchmarks/blob/main/results/gemma-4-e4b_tbq3.json)
+- [`results/phi-4-mini_tbq3.json`](https://github.com/deemwar-products/llama-cpu-benchmarks/blob/main/results/phi-4-mini_tbq3.json)
+- [`results/build-status-pr21089.json`](https://github.com/deemwar-products/llama-cpu-benchmarks/blob/main/results/build-status-pr21089.json) (build evidence)
 
-Audit trail for the wrong attempt: [`results/build-status.json`](https://github.com/deemwar-products/llama-local-benchmarks/blob/main/results/build-status.json) and [`results/tq-build-atomicmilkshake.log`](https://github.com/deemwar-products/llama-local-benchmarks/blob/main/results/tq-build-atomicmilkshake.log).
+Audit trail for the wrong attempt: [`results/build-status.json`](https://github.com/deemwar-products/llama-cpu-benchmarks/blob/main/results/build-status.json) and [`results/tq-build-atomicmilkshake.log`](https://github.com/deemwar-products/llama-cpu-benchmarks/blob/main/results/tq-build-atomicmilkshake.log).
 
 The article's TurboQuant section was rewritten to lead with the correction. The recommendation stack is unchanged (ship Gemma-4-E4B-it at Q4_K_M with FP16 KV) because TurboQuant trades ~50 % CPU throughput for KV memory savings you don't need at 4K context.
 
 ## What I decided on your behalf (overnight)
 
-1. **Made the repo public** — required for GitHub Pages on the current plan. Zero secrets in repo. Revert with `gh repo edit deemwar-products/llama-local-benchmarks --visibility private` if you want, but Pages stops working in private mode.
+1. **Made the repo public** — required for GitHub Pages on the current plan. Zero secrets in repo. Revert with `gh repo edit deemwar-products/llama-cpu-benchmarks --visibility private` if you want, but Pages stops working in private mode.
 2. **Sanitized every public artifact** of host identifiers, IPs, SSH aliases, and co-tenant app names after your mid-run call ("hardware is fine all others are not good"). The repo's `CLAUDE.md` is public-safe; operational specifics moved to `CLAUDE.local.md` (gitignored).
 3. **`gemma-4-4b` doesn't exist** — Gemma 4's lineup is E2B and E4B (MatFormer "effective" sizes). Substituted **`gemma-4-E4B-it`**.
 4. **35 BFCL cases** (20 simple + 10 multiple_function + 5 parallel) — embedded subset, no external dataset dependency.

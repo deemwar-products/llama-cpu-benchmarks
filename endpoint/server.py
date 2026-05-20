@@ -102,7 +102,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._send_json(
                 200,
                 {
-                    "service": "llama-local-benchmarks",
+                    "service": "llama-cpu-benchmarks",
                     "host": HOST_LABEL,
                     "endpoints": ["/results", "/results/<cell_id>", "/healthz"],
                     "available_cell_ids": ids,

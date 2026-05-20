@@ -43,4 +43,4 @@ Three ~4B open-weight tool-calling models (Qwen 3.5 4B, Google Gemma-4-E4B-it, M
 - **[HTTP API](/api)** — grab the JSON directly.
 - **[Spec: TurboQuant bake-off](/specs/llama-cpp-turboquant-benchmark)** · **[Spec: Engine bake-off](/specs/cpu-fast-inference-bake-off)** — methodology and why each measurement was chosen.
 
-All MIT, all reproducible from a [public repo](https://github.com/deemwar-products/llama-local-benchmarks).
+All MIT, all reproducible from a [public repo](https://github.com/deemwar-products/llama-cpu-benchmarks).

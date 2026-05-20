@@ -17,7 +17,7 @@ CORS: `Access-Control-Allow-Origin: *`.
 ## Example
 
 ```bash
-curl -s https://deemwar-products.github.io/llama-local-benchmarks/api/summary.json \
+curl -s https://deemwar-products.github.io/llama-cpu-benchmarks/api/summary.json \
   | jq '.cells[] | {id: .cell_id, tps: .gen_eval_tps, tool: .overall_pass}'
 ```
 
@@ -50,4 +50,4 @@ type Cell = {
 
 ## Optional local mirror
 
-If you check out the repo and run the harness yourself, the per-cell JSONs land in `results/` and you can serve them with the stdlib `endpoint/` service (`docker build -t llamabench-endpoint endpoint/ && docker run …`). Useful for live re-runs that should update without redeploying the static site. Source: [`endpoint/`](https://github.com/deemwar-products/llama-local-benchmarks/tree/main/endpoint).
+If you check out the repo and run the harness yourself, the per-cell JSONs land in `results/` and you can serve them with the stdlib `endpoint/` service (`docker build -t llamabench-endpoint endpoint/ && docker run …`). Useful for live re-runs that should update without redeploying the static site. Source: [`endpoint/`](https://github.com/deemwar-products/llama-cpu-benchmarks/tree/main/endpoint).

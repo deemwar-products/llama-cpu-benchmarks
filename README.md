@@ -1,4 +1,4 @@
-# llama-local-benchmarks
+# llama-cpu-benchmarks
 
 Benchmarks for small (~4B) open-weight tool-calling LLMs on a commodity x86 CPU box.
 
@@ -6,12 +6,12 @@ Compares **Qwen3.5-4B** vs **Gemma-4-E4B-it** vs **Phi-4-mini** under **standard
 
 ## Live site
 
-**https://deemwar-products.github.io/llama-local-benchmarks/**
+**https://deemwar-products.github.io/llama-cpu-benchmarks/**
 
-- [Findings article](https://deemwar-products.github.io/llama-local-benchmarks/article)
-- [Results table](https://deemwar-products.github.io/llama-local-benchmarks/results)
-- [Spec](https://deemwar-products.github.io/llama-local-benchmarks/specs/llama-cpp-turboquant-benchmark)
-- [API JSON](https://deemwar-products.github.io/llama-local-benchmarks/api/summary.json)
+- [Findings article](https://deemwar-products.github.io/llama-cpu-benchmarks/article)
+- [Results table](https://deemwar-products.github.io/llama-cpu-benchmarks/results)
+- [Spec](https://deemwar-products.github.io/llama-cpu-benchmarks/specs/llama-cpp-turboquant-benchmark)
+- [API JSON](https://deemwar-products.github.io/llama-cpu-benchmarks/api/summary.json)
 
 ## Layout
 

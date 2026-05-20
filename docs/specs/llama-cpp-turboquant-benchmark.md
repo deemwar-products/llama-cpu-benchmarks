@@ -1,6 +1,6 @@
 # Spec — llama.cpp Small-Model Tool-Calling Benchmark (Qwen × Gemma × Phi, Standard vs TurboQuant)
 
-**Repo:** `deemwar-products/llama-local-benchmarks`
+**Repo:** `deemwar-products/llama-cpu-benchmarks`
 **Status:** Draft v1 · awaiting Muthu's approval
 **Date:** 2026-05-20
 **Driver:** Muthukumaran Navaneethakrishnan

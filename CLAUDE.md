@@ -1,4 +1,4 @@
-# CLAUDE.md — llama-local-benchmarks
+# CLAUDE.md — llama-cpu-benchmarks
 
 This repo benchmarks the three best open-weight ~4B tool-calling instruct models from Qwen / Google / Microsoft on a single commodity CPU box, with and without **TurboQuant** (Google DeepMind, ICLR 2026) KV-cache compression.
 
@@ -22,7 +22,7 @@ Hard rules when running anything on that host:
 ```
 docs/                  VitePress site (deployed to GitHub Pages)
   specs/               experiment specs — read before running
-  .vitepress/config.mts site config; base path /llama-local-benchmarks/
+  .vitepress/config.mts site config; base path /llama-cpu-benchmarks/
   public/api/          static JSON endpoints served from the site
 harness/               BFCL Python test harness (run_bfcl.py + bfcl_subset.json)
 scripts/               per-cell driver shell scripts (run_cell.sh, etc.)
@@ -70,7 +70,7 @@ TQ cells require a TurboQuant-capable llama.cpp build (see `results/` for the re
 Push to `main`. The `Deploy VitePress docs` workflow:
 1. Copies `results/*.json` into `docs/public/api/` and strips any `host:` field from the JSON (sanitization step).
 2. Builds VitePress.
-3. Deploys to GitHub Pages → `https://deemwar-products.github.io/llama-local-benchmarks/`.
+3. Deploys to GitHub Pages → `https://deemwar-products.github.io/llama-cpu-benchmarks/`.
 
 ## When changing the harness
 

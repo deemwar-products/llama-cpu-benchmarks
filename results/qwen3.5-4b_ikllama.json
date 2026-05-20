@@ -1,0 +1,44 @@
+{
+  "cell_id": "qwen3.5-4b_ikllama",
+  "model_id": "qwen3.5-4b",
+  "weight_quant": "Q4_K_M",
+  "kv_quant": "fp16",
+  "llamacpp_variant": "ikawrakow/ik_llama.cpp@40254a5 (CPU-only AVX2, IQK matmul + IQK FA kernels)",
+  "host": "shared-cpu-host",
+  "throughput": {
+    "prompt_eval_tps": 58.08,
+    "gen_eval_tps": 8.37
+  },
+  "memory": {
+    "peak_rss_str": null
+  },
+  "latency_ms": {
+    "p50": 8977.07,
+    "p95": 13373.52,
+    "mean": 9463.25
+  },
+  "tool_calling": {
+    "format_pass_rate": 100.0,
+    "function_accuracy": 85.71,
+    "argument_accuracy": 82.86,
+    "overall_pass": 82.86
+  },
+  "by_category": {
+    "multiple_function": {
+      "n": 10,
+      "overall_pass": 90.0
+    },
+    "parallel": {
+      "n": 5,
+      "overall_pass": 0.0
+    },
+    "simple": {
+      "n": 20,
+      "overall_pass": 100.0
+    }
+  },
+  "n_cases": 35,
+  "started_at": "2026-05-20T12:24:28Z",
+  "duration_sec": 340.41,
+  "notes": "ik_llama.cpp 1.53x faster end-to-end p50 vs stock llama.cpp on Qwen (8977 vs 13739 ms). Prompt eval is the source of the win: 58.08 vs 35.85 tps (1.62x). Generation tok/s is actually slightly slower (8.37 vs 9.79). Parallel-call accuracy collapses 80% -> 0% \u2014 likely a chat-template handling difference in ik_llama master. Simple + multi-function categories unaffected or improved (100% / 90%)."
+}

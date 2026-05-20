@@ -87,13 +87,21 @@ jobs:
                   'overall_pass': (c.get('tool_calling') or {}).get('overall_pass'),
                   'format_pass_rate': (c.get('tool_calling') or {}).get('format_pass_rate'),
                   'n_cases': c.get('n_cases'),
+                  'status': c.get('status', 'complete'),
+                  'skip_reason': c.get('skip_reason'),
               }
+
+          # Split into complete vs skipped/failed for cleaner rendering
+          complete_cells = [c for c in cells if c.get('status') != 'skipped' and (c.get('tool_calling') or {}).get('overall_pass') is not None]
+          skipped_cells = [c for c in cells if c.get('status') == 'skipped' or (c.get('tool_calling') or {}).get('overall_pass') is None]
 
           summary = {
               'generated_at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
               'host': 'shared-cpu-host',
-              'n_cells': len(cells),
-              'cells': [row(c) for c in cells],
+              'n_cells': len(complete_cells),
+              'n_skipped': len(skipped_cells),
+              'cells': [row(c) for c in complete_cells],
+              'skipped': [row(c) for c in skipped_cells],
               'full': cells,
           }
 

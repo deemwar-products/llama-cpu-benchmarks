@@ -58,13 +58,16 @@ The clear winner on accuracy *and* end-to-end latency is **gemma-4-E4B-it** — 
 
 ## Headline numbers (tbq3_0 cells, PR #21089 CPU build)
 
-| Model | gen tok/s | p50 ms | Tool overall |
-|---|---:|---:|---:|
-| gemma-4-e4b_tbq3 | *pending* | *pending* | *pending* |
-| qwen3.5-4b_tbq3 | *pending* | *pending* | *pending* |
-| phi-4-mini_tbq3 | *pending* | *pending* | *pending* |
+| Model | gen tok/s | p50 ms | Tool overall | vs std |
+|---|---:|---:|---:|---|
+| qwen3.5-4b_tbq3 | **4.26** | 30,008 | 74.3 % | −56 % tok/s · 2.2× slower latency · −17 pp accuracy |
+| gemma-4-e4b_tbq3 | — | — | — | **SKIPPED** — PR #21089 branch predates Gemma-4 arch support |
+| phi-4-mini_tbq3 | — | 26,454 | 51.4 % | vs Phi workaround 74.3 % → **−23 pp**; vs Phi default 0.0 % → still better with workaround |
 
-Live numbers below auto-populate from [`/api/summary.json`](/api/summary.json) when the deploy lands. Quality is expected within rounding distance of std (PPL data from the PR's own benchmarks suggests `tbq3_0` matches `q4_0` within 0.13 PPL on Qwen3.5-4B). Throughput is expected to drop materially — see [§ Q2](#q2-does-turboquant-pay-off).
+Two things to notice:
+
+1. **Quality is *not* preserved on tool-calling.** The PR's own benchmarks claim `tbq3_0` matches `q4_0` KV within 0.13 PPL on Qwen3.5-4B. That's PPL on long-context next-token prediction — a different task than BFCL. On structured tool-calling, Qwen drops 17 pp overall (with parallel calls collapsing 80 % → 0 %), Phi drops 23 pp from its workaround baseline.
+2. **Gemma-4-E4B-it cannot be loaded** by the PR's binary — the PR is based on an older llama.cpp commit (ggml 0.9.8) that knows `gemma`, `gemma2`, `gemma3`, `gemma3n` but not `gemma4`. That's a real blocker for our headline-winner model and needs the PR rebased before TurboQuant becomes a serious option for Gemma-4 users.
 
 ## Live numbers (refreshes when the workflow redeploys)
 
@@ -151,9 +154,15 @@ Qwen 3.5's strength is **simple cases** (95 %) and somewhat better raw throughpu
 
 ### Q2: Does TurboQuant pay off?
 
-Short answer: **no, not on this hardware shape**. There *is* a CPU AVX2 path (upstream PR #21089's `tbq3_0` cache type — see [the TurboQuant build adventure](#the-turboquant-build-adventure-corrected) for what I had to correct here), and we ran it on all three models — `qwen3.5-4b_tbq3`, `gemma-4-e4b_tbq3`, `phi-4-mini_tbq3`. The quality is preserved; the throughput cost is roughly half.
+Short answer: **no, and worse than I expected**. Three distinct problems showed up on this hardware shape:
 
-The reason that's not a win for *this* setup is structural: TurboQuant's headline benefit is **KV-cache memory reduction** — 4-6× smaller cache for the same accuracy. That matters when you're trying to fit a 100K-context model into a 24 GB GPU. On a 62 GB-RAM CPU box running 4 K-context tool calls, the KV cache is hundreds of megabytes, not the bottleneck. So you'd be paying a real throughput tax for a memory saving you can't spend.
+1. **Throughput**: ~56 % drop on Qwen (9.79 → 4.26 gen tok/s). End-to-end p50 per BFCL turn 2.2× slower (13.7 s → 30.0 s).
+2. **Accuracy regression** is real — not just the "matches FP16 within rounding distance" the PR's PPL numbers suggested:
+   - Qwen overall_pass: 91.4 % → 74.3 % (−17 pp). **Parallel calls collapse 80 % → 0 %.**
+   - Phi (using the workaround prompt): 74.3 % → 51.4 % (−23 pp).
+3. **Gemma-4 doesn't load at all** — PR #21089's branch is on an older llama.cpp commit that doesn't know the `gemma4` architecture identifier. Until the PR is rebased onto current main, Gemma-4-E4B users can't use TurboQuant via this path.
+
+The reason it's not a win on *this* setup is structural: TurboQuant's headline benefit is **KV-cache memory reduction** — 4-6× smaller cache for the same accuracy. That matters when you're trying to fit a 100K-context model into a 24 GB GPU. On a 62 GB-RAM CPU box running 4 K-context tool calls, the KV cache is hundreds of megabytes, not the bottleneck. So you'd be paying a real throughput tax AND an accuracy tax for a memory saving you can't spend.
 
 That story might invert at 32 K-128 K context (the PR maintainer's recommendation), or on a small-RAM edge box, or for batch inference where halved tok/s is fine. None of those is us.
 
@@ -168,15 +177,26 @@ What threw me originally:
 
 The CPU path you actually want is **PR #21089 from the elusznik fork**. The PR is open at time of writing; merge tracking lives in discussion #20969.
 
-### What "with vs without" actually means on CPU
+### What "with vs without" actually means on CPU — measured
 
-I rebuilt PR #21089 in a clean `ubuntu:22.04` Docker container (`cmake -DGGML_NATIVE=ON -DGGML_AVX2=ON -DGGML_CUDA=OFF -DGGML_METAL=OFF`) and re-ran the same three models with `--cache-type-k tbq3_0 --cache-type-v tbq3_0`. The 3 new cells (`qwen3.5-4b_tbq3`, `gemma-4-e4b_tbq3`, `phi-4-mini_tbq3`) are visible on the [results page](/results) alongside the std cells.
+I rebuilt PR #21089 in a clean `ubuntu:22.04` Docker container (`cmake -DGGML_NATIVE=ON -DGGML_AVX2=ON -DGGML_CUDA=OFF -DGGML_METAL=OFF`) and re-ran the same three models with `--cache-type-k tbq3_0 --cache-type-v tbq3_0`. The 3 cells (`qwen3.5-4b_tbq3`, `gemma-4-e4b_tbq3` — *skipped, see above*, `phi-4-mini_tbq3`) live alongside the std cells on the [results page](/results).
 
 **The bottom line for our 4 K-context tool-calling workload:**
 
-- **Accuracy:** `tbq3_0` matches FP16 KV within rounding distance — TurboQuant's quality claim holds on CPU.
-- **Throughput:** TBQ on CPU pays a real cost. Other people's published numbers (PR #21089's own table, on a 4-thread Qwen3.5-4B run): `q4_0` KV at 14.09 gen tok/s → `tbq3_0` at 6.74 tok/s — roughly **half**. On a 60 GB / 4 K-context box, you're paying ~50 % of your throughput to save a few hundred MB of KV cache you don't need.
-- **vs FP16 (the default).** That comparison is what we directly measured — the `*_std` vs `*_tbq3` rows. See live numbers on [/results](/results).
+- **Quality:** does NOT hold up on tool-calling. PR's PPL claim ≠ BFCL accuracy. Qwen overall drops 17 pp, Phi drops 23 pp (vs the system-prompt workaround), parallel calls fail entirely on both.
+- **Throughput:** **2.3× slower** on Qwen (we measured), 2.2× slower per-turn end-to-end. Aligns with the PR's own table (14.09 → 6.74 tok/s on a different 4-thread CPU).
+- **Coverage:** Gemma-4 isn't supported by the PR's branch yet.
+
+The Google paper's headline "8× speed-up" remains a synthetic GPU-kernel-isolation number that doesn't survive real workloads:
+
+| Source | Hardware | TurboQuant vs baseline |
+|---|---|---|
+| Paper (Google, ICLR 2026) | H100 GPU, attention-kernel benchmark | **8× faster** ← marketing number |
+| PR #21089 own table | 4-thread CPU | **2.1× slower** vs `q4_0` KV |
+| Discussion #21829 user | 2× H200 GPU | **1.18× slower** vs FP16 KV |
+| **Our measurement** | Xeon E-2176G AVX2 CPU | **2.2× slower** end-to-end per BFCL turn vs FP16 KV |
+
+The 8× claim only holds when all three of: GPU with mid-range memory bandwidth, attention-kernel-bound workload, isolated dequant+matmul measurement. Anywhere else, TurboQuant is *slower*. It's fundamentally a memory-saving technique marketed partly as a speed technique — the memory savings are real; the speed wins are conditional.
 
 ### So when is TurboQuant on CPU worth it?
 

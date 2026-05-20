@@ -44,7 +44,24 @@ Published claim: ~2× faster than mainline on AVX2 Xeon. Built from current mast
 
 Runtime needs `libcurl4` and `libmtmd.so` from the build's own `examples/mtmd/` dir — runtime container needs `LD_LIBRARY_PATH=…/src:…/ggml/src:…/examples/mtmd`. Server boots in 2 s.
 
-**Result on Qwen:** *(harness in flight, numbers will land here)*
+**Result on Qwen:**
+
+| Metric | stock | ik_llama | Δ |
+|---|---:|---:|---|
+| prompt tok/s | 35.85 | **58.08** | **1.62× faster** |
+| gen tok/s | 9.79 | 8.37 | 0.85× (slightly slower) |
+| **p50 latency** | 13,739 ms | **8,977 ms** | **1.53× faster** |
+| overall_pass | 91.4 % | 82.9 % | −8.6 pp |
+| format_pass | 97.1 % | **100 %** | +2.9 pp |
+| simple | 95 % | **100 %** | +5 pp |
+| multi-func | 90 % | 90 % | same |
+| **parallel** | 80 % | **0 %** | **−80 pp** |
+
+**Mixed result.** The 1.53× end-to-end win is real and comes from **prompt evaluation, not generation** — tool-calling prompts include the tool schemas which ik_llama's IQK matmul kernels chew through 1.62× faster than mainline. Token generation is actually marginally slower.
+
+The catch: **parallel-call generation breaks entirely.** Likely a chat-template handling difference in ik_llama master — worth filing upstream. Until fixed, ik_llama is a clean win **only when you don't need parallel tool calls** (simple + multi-function workloads only).
+
+*(Gemma + Phi on ik_llama still in flight — landing in subsequent commits.)*
 
 ### Engine A — stock llama.cpp (reference baseline)
 

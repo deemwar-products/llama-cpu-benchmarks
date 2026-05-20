@@ -36,7 +36,7 @@ results/               per-cell JSON + aggregated summary.json (created on run)
 |  | Qwen3.5-4B | gemma-4-E4B-it | Phi-4-mini |
 |---|---|---|---|
 | **std** (FP16 KV) | `qwen3.5-4b_std` | `gemma-4-e4b_std` | `phi-4-mini_std` |
-| **tq** (turbo3 KV) | `qwen3.5-4b_tq` | `gemma-4-e4b_tq` | `phi-4-mini_tq` |
+| **tbq3** (tbq3_0 KV, PR #21089) | `qwen3.5-4b_tbq3` | `gemma-4-e4b_tbq3` | `phi-4-mini_tbq3` |
 
 Weight quant is constant: **Q4_K_M imatrix** (Bartowski / Unsloth). Only the KV cache changes.
 

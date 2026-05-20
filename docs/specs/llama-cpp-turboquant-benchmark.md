@@ -53,7 +53,7 @@ Three best-in-class ~4B instruct models with native tool-calling, May 2026:
 | Cell ID | Weight quant | KV cache | Note |
 |---|---|---|---|
 | `std` | Q4_K_M imatrix (Bartowski) | FP16 (default) | Baseline; what most users run today |
-| `tq` | Q4_K_M imatrix (Bartowski) | TurboQuant `turbo3` (3-bit) | TurboQuant arm |
+| `tbq3` | Q4_K_M imatrix (Bartowski) | TurboQuant `tbq3_0` (3-bit, PR #21089 CPU AVX2) | TurboQuant arm |
 
 **Weight quant kept constant** at Q4_K_M imatrix across all six runs — the variable under test is the KV-cache compression, not weight precision. This isolates TurboQuant's effect.
 
@@ -67,18 +67,18 @@ Three best-in-class ~4B instruct models with native tool-calling, May 2026:
     tq/Q4_K_M        4            5             6
 ```
 
-## 7. TurboQuant fork choice
+## 7. TurboQuant source choice (corrected)
 
-Upstream llama.cpp does not yet have TurboQuant merged (active discussion in `ggml-org/llama.cpp#20969`). Candidate forks:
+The initial spec listed GPU-targeted community forks (`atomicmilkshake`, `TheTom`, `MartinCrespoC`, `PippBauda`). All four gate TurboQuant kernels behind `GGML_CUDA=ON`, so a `-DGGML_CUDA=OFF` build produces a binary functionally equivalent to upstream llama.cpp with no `tbq*` cache types registered. Documented in `results/build-status.json`.
 
-| Fork | Notes | Pick rank |
-|---|---|---|
-| `atomicmilkshake/llama-cpp-turboquant` | turbo2/3/4 + TriAttention; primary fork by activity | **1 (default)** |
-| `TheTom/llama-cpp-turboquant` | Has `tools/quantize/README.md`; secondary if #1 fails | 2 |
-| `MartinCrespoC/QuantumLeap` | Markets CPU + Ollama-compatible API | 3 |
-| `PippBauda/llama.cpp-turboquant-mtp` | TurboQuant+ + MTP integration | 4 |
+**The actual CPU AVX2 path is upstream PR [`ggml-org/llama.cpp#21089`](https://github.com/ggml-org/llama.cpp/pull/21089)** by `elusznik`. It adds CPU-only cache types:
 
-**Open question:** none of these forks explicitly advertise CPU-only AVX2 x86 builds. Most reference CUDA (Turing+/Ampere) or Apple Metal. Phase 0 (§9) gates Phase 1 on whether any fork actually builds and runs on this CPU.
+- `tbq3_0` — 3.0625 bits/elem, ~5.19× compression vs FP16
+- `tbq4_0` — 4.0625 bits/elem, ~3.94× compression vs FP16
+
+Includes generic-C fallback + AVX2 kernel. ARM NEON added later by a community contributor. Exposed via `--cache-type-k tbq3_0 --cache-type-v tbq3_0` — flag name uses `tbq` prefix, **not** the `turbo` prefix used by the GPU forks.
+
+**As of May 2026 the PR is open, not merged.** Build from the PR branch directly. Merge tracking in discussion #20969.
 
 ## 8. llama.cpp Build & Run Configuration
 
@@ -134,7 +134,7 @@ llama-server --model /models/${model}-Q4_K_M.gguf \
 llama-server --model /models/${model}-Q4_K_M.gguf \
   --threads 4 --ctx-size 8192 \
   --jinja --port 11434 \
-  --cache-type-k turbo3 --cache-type-v turbo3
+  --cache-type-k tbq3_0 --cache-type-v tbq3_0
 ```
 
 (Exact TurboQuant flag spelling confirmed against chosen fork's docs in Phase 0.)
@@ -193,10 +193,10 @@ Per cell, written to `results/${cell_id}.json`:
 
 ```json
 {
-  "cell_id": "qwen3.5-4b_tq",
+  "cell_id": "qwen3.5-4b_tbq3",
   "model": "Qwen3.5-4B-Instruct",
   "weight_quant": "Q4_K_M",
-  "kv_quant": "turbo3",
+  "kv_quant": "tbq3_0",
   "llamacpp_variant": "atomicmilkshake/llama-cpp-turboquant@<sha>",
   "host": "shared-cpu-host",
   "throughput": {

@@ -1,7 +1,13 @@
 {
   "attempted_at": "2026-05-20T01:00:00Z",
   "host": "shared-cpu-host",
-  "conclusion": "TurboQuant has no deployable CPU-AVX2 binary path in the May 2026 community forks. The kernels are gated behind CUDA at build time. Re-evaluate when upstream llama.cpp merges TurboQuant (ggml-org/llama.cpp#20969) or a community CPU fork emerges.",
+  "correction": "This file documents the INITIAL (and wrong) attempt that tried GPU-targeted community forks (atomicmilkshake, TheTom). For the correct CPU AVX2 path see build-status-pr21089.json — that's the upstream-bound elusznik PR with tbq3_0 / tbq4_0 cache types. Keep this file for the audit trail of what didn't work and why.",
+  "initial_conclusion_status": "incorrect — there IS a CPU AVX2 path in PR #21089",
+  "what_actually_happened": [
+    "Tried atomicmilkshake/llama-cpp-turboquant first — built clean on CPU but emits no `turbo3` / `turbo4` flag because the fork gates TurboQuant kernels behind GGML_CUDA=ON.",
+    "The CPU AVX2 path lives upstream in PR #21089 (elusznik) with cache types `tbq3_0` and `tbq4_0`. Flag-name mismatch (turbo3 vs tbq3_0) caused the grep in build_turboquant.sh to miss it.",
+    "See build-status-pr21089.json for the corrected build + benchmark outcome."
+  ],
   "attempts": [
     {
       "fork": "atomicmilkshake/llama-cpp-turboquant",
@@ -12,21 +18,20 @@
       "evidence": {
         "compile_status": "success",
         "linking_status": "success — both bin/llama-server and bin/llama-bench produced",
-        "help_grep_turbo": "no matches — only standard --cache-type-k / --cache-type-v entries with no 'turbo' variants",
-        "interpretation": "Fork's TurboQuant kernels are gated behind CUDA — when built with -DGGML_CUDA=OFF the turbo3/turbo4 cache types are not registered into the cache-type enum and llama-server does not advertise them. The binary is functionally equivalent to upstream llama.cpp's CPU build, just stale."
+        "help_grep_turbo": "no matches",
+        "interpretation": "TurboQuant kernels are CUDA-gated in this fork. Without -DGGML_CUDA=ON the binary is functionally upstream llama.cpp."
       },
-      "log_file": "tq-build-atomicmilkshake.log",
-      "build_seconds_approx": 600
+      "log_file": "tq-build-atomicmilkshake.log"
     },
     {
       "fork": "TheTom/llama-cpp-turboquant",
       "outcome": "skipped-after-evidence",
-      "reason": "atomicmilkshake confirmed the pattern (build succeeds, kernels CUDA-gated, no CPU-AVX2 turbo flag). Cycling through three more functionally-identical CUDA-only forks would not produce a different finding. The build script in scripts/build_turboquant.sh remains available for re-running all four if needed."
+      "reason": "Same CUDA-gating pattern. The actual CPU path is upstream PR #21089, not these GPU-targeted community forks."
     },
     {
       "fork": "MartinCrespoC/QuantumLeap---Llama.cpp-TurboQuant",
       "outcome": "skipped-after-evidence",
-      "reason": "same as TheTom"
+      "reason": "same"
     },
     {
       "fork": "PippBauda/llama.cpp-turboquant-mtp",

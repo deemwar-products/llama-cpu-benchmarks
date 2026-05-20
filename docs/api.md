@@ -6,11 +6,11 @@ The same per-cell data the [results table](/results) and [article](/article) cit
 
 | Path | Description |
 |---|---|
-| [`/api/summary.json`](/api/summary.json) | Aggregated table of all 6 cells |
+| [`/api/summary.json`](/api/summary.json) | Aggregated table of all cells |
 | [`/api/results.json`](/api/results.json) | Alias for `summary.json` |
 | `/api/cells/{cell_id}.json` | Per-cell raw result with full BFCL trace |
 
-Cell IDs: `qwen3.5-4b_std`, `qwen3.5-4b_tq`, `gemma-4-e4b_std`, `gemma-4-e4b_tq`, `phi-4-mini_std`, `phi-4-mini_tq`.
+Standard cells: `qwen3.5-4b_std`, `qwen3.5-4b_tbq3`, `gemma-4-e4b_std`, `gemma-4-e4b_tbq3`, `phi-4-mini_std`, `phi-4-mini_std_workaround`, `phi-4-mini_tbq3`.
 
 CORS: `Access-Control-Allow-Origin: *`.
 
@@ -19,12 +19,6 @@ CORS: `Access-Control-Allow-Origin: *`.
 ```bash
 curl -s https://deemwar-products.github.io/llama-local-benchmarks/api/summary.json \
   | jq '.cells[] | {id: .cell_id, tps: .gen_eval_tps, tool: .overall_pass}'
-```
-
-```json
-{ "id": "qwen3.5-4b_std", "tps": 9.17, "tool": 91.4 }
-{ "id": "qwen3.5-4b_tq", "tps": 8.9, "tool": 90.0 }
-...
 ```
 
 ## Schema
@@ -36,8 +30,8 @@ type Cell = {
   cell_id: string
   model_id: string
   weight_quant: 'Q4_K_M'
-  kv_quant: 'fp16' | 'turbo3'
-  llamacpp_variant: string  // image tag or fork SHA
+  kv_quant: 'fp16' | 'tbq3_0' | 'tbq4_0'
+  llamacpp_variant: string  // image tag or PR/fork SHA
   throughput: { prompt_eval_tps: number; gen_eval_tps: number }
   memory:    { peak_rss_str: string }
   latency_ms: { p50: number; p95: number; mean: number }

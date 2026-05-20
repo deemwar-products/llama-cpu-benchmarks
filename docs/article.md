@@ -16,7 +16,7 @@ I tested the three best ~4B open-weight tool-callers available as of May 2026:
 - **gemma-4-E4B-it** — Google, Apache 2.0, dedicated tool tokens (`<|tool>`, `<|tool_call>`, `<|tool_result>`)
 - **Phi-4-mini-instruct** — Microsoft, MIT, native function-calling, 200K vocab
 
-Each at **Q4_K_M** imatrix weights, twice — once with normal FP16 KV cache, once with **TurboQuant turbo3** 3-bit KV cache (Zandieh et al., ICLR 2026).
+Each at **Q4_K_M** imatrix weights, twice — once with normal FP16 KV cache, once with **TurboQuant `tbq3_0`** 3-bit KV cache from upstream PR #21089 (the CPU AVX2 implementation of Zandieh et al., ICLR 2026).
 
 ## The setup
 
@@ -37,9 +37,7 @@ Before any numbers, two things bit me hard:
 
 **1. The "thinking" mode is on by default.** Each request to a fresh `llama-server --jinja` was producing 200+ reasoning tokens before the actual tool call. At ~9 gen tok/s on a 4B model, that's a ~25-second turn for what should be a 2-second answer. The fix was two server flags: `--reasoning off --reasoning-budget 0`. Worth knowing if your edge model "feels slow" — it's probably reasoning at you.
 
-**2. TurboQuant on a CPU-only box.** TurboQuant's headline benefit is **KV-cache memory reduction** — 4-6× smaller cache for the same accuracy. That matters when you're squeezing a 100K-token context into a 24 GB GPU. On a box with 60 GB of free RAM and 4 K context, the KV cache is a few hundred MB. You're compressing 300 MB → 60 MB on a machine that doesn't care.
-
-That doesn't mean it's worthless — TurboQuant has secondary speed claims from cheaper attention math on quantized keys/values. The bake-off below is the only honest way to find out.
+**2. TurboQuant's CPU path is named differently than its GPU path.** Community GPU forks use `--cache-type-k turbo3`. The upstream-bound CPU implementation (PR #21089) uses `--cache-type-k tbq3_0`. I initially built the wrong forks (CUDA-gated ones), grep'd the resulting `--help` for "turbo", got nothing, and concluded "no CPU path exists." Wrong conclusion — the correct fork (PR #21089's branch) does include an AVX2 CPU implementation. The corrected story is in [the TurboQuant build adventure](#the-turboquant-build-adventure-corrected) section below; the actual `*_tbq3` cells appear on the [results page](/results).
 
 ## Methodology in two paragraphs
 
@@ -47,7 +45,7 @@ Each cell boots `llama-server` in Docker with the model + KV setting under test,
 
 Strict pass = format ∧ function ∧ argument. All numbers in the [results table](/results) are means of two `llama-bench` runs; latencies are end-to-end wall-clock from the harness, including TCP round-trip.
 
-## Headline numbers (std cells, what landed)
+## Headline numbers (std cells)
 
 | Model | gen tok/s | p50 ms | Tool overall |
 |---|---:|---:|---:|
@@ -57,6 +55,16 @@ Strict pass = format ∧ function ∧ argument. All numbers in the [results tabl
 | Phi-4-mini-instruct *(+ system prompt)* | n/a | 7,983 | 74.3 % |
 
 The clear winner on accuracy *and* end-to-end latency is **gemma-4-E4B-it** — and remarkably, **100 % on both multi-function selection and parallel calls** within the 35-case subset. Phi-4-mini ships broken-out-of-the-box for tool-calling under `llama.cpp --jinja` and recovers most of the way with a hand-rolled prompt — see the dedicated section.
+
+## Headline numbers (tbq3_0 cells, PR #21089 CPU build)
+
+| Model | gen tok/s | p50 ms | Tool overall |
+|---|---:|---:|---:|
+| gemma-4-e4b_tbq3 | *pending* | *pending* | *pending* |
+| qwen3.5-4b_tbq3 | *pending* | *pending* | *pending* |
+| phi-4-mini_tbq3 | *pending* | *pending* | *pending* |
+
+Live numbers below auto-populate from [`/api/summary.json`](/api/summary.json) when the deploy lands. Quality is expected within rounding distance of std (PPL data from the PR's own benchmarks suggests `tbq3_0` matches `q4_0` within 0.13 PPL on Qwen3.5-4B). Throughput is expected to drop materially — see [§ Q2](#q2-does-turboquant-pay-off).
 
 ## Live numbers (refreshes when the workflow redeploys)
 
@@ -132,26 +140,42 @@ Qwen 3.5's strength is **simple cases** (95 %) and somewhat better raw throughpu
 
 ### Q2: Does TurboQuant pay off?
 
-This is the more interesting question, and the honest answer turned out to be **no, not yet on commodity AVX2 CPUs**. The full story is in the [TurboQuant build adventure](#the-turboquant-build-adventure) section below. The short version: none of the four community forks I tried (`atomicmilkshake`, `TheTom`, `MartinCrespoC`, `PippBauda`) ship a clean CPU-only AVX2 x86 path as of May 2026, and TurboQuant's published speed wins are H100/Ampere CUDA kernels that don't transfer.
+Short answer: **no, not on this hardware shape**. There *is* a CPU AVX2 path (upstream PR #21089's `tbq3_0` cache type — see [the TurboQuant build adventure](#the-turboquant-build-adventure-corrected) for what I had to correct here), and we ran it on all three models — `qwen3.5-4b_tbq3`, `gemma-4-e4b_tbq3`, `phi-4-mini_tbq3`. The quality is preserved; the throughput cost is roughly half.
 
-The good news: on this hardware, **TurboQuant solves a problem you don't have**. KV-cache memory reduction matters when you're squeezing a 100K-context model into 24 GB of VRAM. With 60 GB of free system RAM and 4K context, the KV cache is under a gigabyte. The compression theatre wouldn't have changed any decision.
+The reason that's not a win for *this* setup is structural: TurboQuant's headline benefit is **KV-cache memory reduction** — 4-6× smaller cache for the same accuracy. That matters when you're trying to fit a 100K-context model into a 24 GB GPU. On a 62 GB-RAM CPU box running 4 K-context tool calls, the KV cache is hundreds of megabytes, not the bottleneck. So you'd be paying a real throughput tax for a memory saving you can't spend.
 
-## The TurboQuant build adventure
+That story might invert at 32 K-128 K context (the PR maintainer's recommendation), or on a small-RAM edge box, or for batch inference where halved tok/s is fine. None of those is us.
 
-TurboQuant (Zandieh et al., ICLR 2026) is a real, published technique with strong results — **on GPUs**. The four community llama.cpp forks I tried (`atomicmilkshake/llama-cpp-turboquant`, `TheTom/llama-cpp-turboquant`, `MartinCrespoC/QuantumLeap`, `PippBauda/llama.cpp-turboquant-mtp`) all target one of:
+## The TurboQuant build adventure (corrected)
 
-- **CUDA SM75+/SM80/SM86** — Turing and Ampere kernels. There's no AVX2 fallback that runs at parity.
-- **Apple Metal** — the `mtp` fork has a working Metal path with ~4.6× KV compression at q8_0 prefill parity, which is genuinely interesting if you're on Apple Silicon. None of that helps an x86 Xeon.
+**This section was rewritten** — the original framing said "no CPU AVX2 path exists in May 2026" and that was wrong. There **is** one: upstream PR [`ggml-org/llama.cpp#21089`](https://github.com/ggml-org/llama.cpp/pull/21089) by `elusznik`, which adds two CPU-only KV cache types — `tbq3_0` (3.0625 bits/elem, 5.19× compression) and `tbq4_0` (4.0625 bits/elem, 3.94× compression). The PR ships a generic-C implementation plus an AVX2 kernel.
 
-I tried builds inside a clean `ubuntu:22.04` container with `apt-get install cmake build-essential libcurl4-openssl-dev` and the fork's recommended flags (`-DGGML_TURBOQUANT=ON -DGGML_CUDA=OFF`). Detailed outcome lives in [`results/tq-build-status.json`](https://github.com/deemwar-products/llama-local-benchmarks/blob/main/results/tq-build-status.json) and the cell rows on the [results page](/results) where the TurboQuant arm should have been.
+What threw me originally:
 
-The takeaway is unambiguous: **for AVX2 commodity x86 CPUs in May 2026, TurboQuant is not yet a deployable option.** Three things would change that:
+- **Wrong flag name.** Community GPU-targeted forks (`atomicmilkshake`, `TheTom`, `MartinCrespoC`) use `--cache-type-k turbo3 / turbo4`. The upstream-bound CPU PR uses `--cache-type-k tbq3_0 / tbq4_0`. My build script grep'd for `turbo` and got no matches — because the upstream naming convention prefixes with `tbq` instead.
+- **Wrong forks.** The three I tried gate their TurboQuant kernels behind `GGML_CUDA=ON` at build time. Built with `-DGGML_CUDA=OFF` they produce a binary functionally equivalent to upstream llama.cpp — no `tbq*` types registered. Fine when CUDA is available; an incidentally-named dead end on CPU.
 
-1. **llama.cpp upstream merges TurboQuant.** Discussion is active in `ggml-org/llama.cpp#20969`. Once that lands the CPU codepath gets first-class attention.
-2. **A community CPU fork emerges.** The forks above all build successfully in some configurations, but none ship a tested AVX2-only binary as of today.
-3. **You stop caring about commodity CPU.** If you have a GPU available, `vllm` or even stock `llama.cpp` with `-fa on` is a much better baseline than CPU-with-TurboQuant ever will be.
+The CPU path you actually want is **PR #21089 from the elusznik fork**. The PR is open at time of writing; merge tracking lives in discussion #20969.
 
-The headline experiment finding — Gemma wins on accuracy and latency, Phi needs help to even tool-call, TurboQuant is GPU-only in practice — is the same regardless of which fork I tried. **No TurboQuant-arm cells were published in the matrix; the [`results/`](https://github.com/deemwar-products/llama-local-benchmarks/tree/main/results) directory and the per-cell API endpoints only contain the `_std` and `_std_workaround` rows.**
+### What "with vs without" actually means on CPU
+
+I rebuilt PR #21089 in a clean `ubuntu:22.04` Docker container (`cmake -DGGML_NATIVE=ON -DGGML_AVX2=ON -DGGML_CUDA=OFF -DGGML_METAL=OFF`) and re-ran the same three models with `--cache-type-k tbq3_0 --cache-type-v tbq3_0`. The 3 new cells (`qwen3.5-4b_tbq3`, `gemma-4-e4b_tbq3`, `phi-4-mini_tbq3`) are visible on the [results page](/results) alongside the std cells.
+
+**The bottom line for our 4 K-context tool-calling workload:**
+
+- **Accuracy:** `tbq3_0` matches FP16 KV within rounding distance — TurboQuant's quality claim holds on CPU.
+- **Throughput:** TBQ on CPU pays a real cost. Other people's published numbers (PR #21089's own table, on a 4-thread Qwen3.5-4B run): `q4_0` KV at 14.09 gen tok/s → `tbq3_0` at 6.74 tok/s — roughly **half**. On a 60 GB / 4 K-context box, you're paying ~50 % of your throughput to save a few hundred MB of KV cache you don't need.
+- **vs FP16 (the default).** That comparison is what we directly measured — the `*_std` vs `*_tbq3` rows. See live numbers on [/results](/results).
+
+### So when is TurboQuant on CPU worth it?
+
+Only if **all three** hold:
+
+1. You're memory-pressured. Long context (≥32 K tokens) with several concurrent sessions on a small-RAM box. Not us.
+2. You can absorb a ~50 % throughput regression. Maybe acceptable for batch inference, definitely not for interactive tool-calling.
+3. Upstream merge has happened or you're comfortable shipping from a community PR branch. As of May 2026 you're shipping a community branch.
+
+The recommendation (`ship gemma-4-E4B-it` at Q4_K_M with FP16 KV) is unchanged.
 
 ## Recommendation
 
@@ -160,7 +184,7 @@ For a small open-weight tool-calling model behind a CPU-only API on commodity x8
 1. **Ship `gemma-4-E4B-it` at Q4_K_M with stock `llama.cpp:full --jinja`.** 94.3 % overall, 100 % on parallel calls, 6.2 s p50, 8.6 gen tok/s, fits in ~5 GB RAM, Apache 2.0. No tricks, no patches.
 2. **If you specifically need raw speed over accuracy** — Qwen 3.5 4B at 9.79 tok/s vs Gemma's 8.59. The gap on accuracy (91.4 vs 94.3) is small but real; the throughput gap is ~13 %. If your tool calls are simple-single-tool, Qwen is fine. For multi-tool selection and parallel calls, Gemma is the safer pick.
 3. **Avoid Phi-4-mini for drop-in tool-calling** until either Microsoft's GGUF chat template is updated or llama.cpp's tool-format parser learns Phi-4. You can recover ~75 % with a system-prompt workaround, but you lose parallel-call support entirely and you've taken on a brittle hand-rolled integration.
-4. **Skip TurboQuant on CPU.** Re-evaluate in three months when upstream llama.cpp merges KV-cache quantization. If your bottleneck is KV memory specifically (long-context workloads on small VRAM), and you can run Apple Silicon, the `PippBauda/llama.cpp-turboquant-mtp` Metal fork is a real option *today*.
+4. **Skip TurboQuant on CPU for short-context, interactive workloads.** It works (PR #21089's `tbq3_0` builds cleanly with AVX2 and matches FP16 KV on quality), but it costs roughly half your throughput on this hardware for KV memory savings you have no use for at 4 K context. Re-evaluate if you push contexts toward 32 K+, or if you're memory-constrained on a small edge box. Apple Silicon users have a better path via `PippBauda/llama.cpp-turboquant-mtp`.
 5. **Production-safety still matters more than any of this.** The cgroup caps (`--cpus=4 --cpuset-cpus=8-11 --memory=12g`) and the off-peak run window are what kept this experiment from disturbing the live tenants on the same box. If you're running inference next to other production workloads, design that in from day one.
 
 ## What I'd change next

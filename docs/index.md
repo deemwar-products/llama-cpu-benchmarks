@@ -18,7 +18,7 @@ hero:
 
 features:
   - title: 6-cell matrix
-    details: 3 models × 2 KV-cache settings (standard FP16 vs TurboQuant turbo3) at Q4_K_M weights, 100 BFCL-style tool-calling cases each.
+    details: 3 models × 2 KV-cache settings (standard FP16 vs TurboQuant tbq3_0 from upstream PR #21089) at Q4_K_M weights, 35 BFCL-style tool-calling cases each.
   - title: Real production hardware
     details: Xeon E-2176G, 6c/12t, 62 GB RAM, AVX2, no GPU. Shared with other workloads via strict cgroup caps so the benchmark can't disturb them.
   - title: Open, reproducible

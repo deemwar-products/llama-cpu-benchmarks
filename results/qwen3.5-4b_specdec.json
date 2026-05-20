@@ -1,0 +1,44 @@
+{
+  "cell_id": "qwen3.5-4b_specdec",
+  "model_id": "qwen3.5-4b",
+  "weight_quant": "Q4_K_M",
+  "kv_quant": "fp16",
+  "llamacpp_variant": "ghcr.io/ggml-org/llama.cpp:full + speculative decoding (draft=Qwen3.5-0.8B-Q4_K_M, --spec-draft-n-max 8 --spec-draft-n-min 2)",
+  "host": "shared-cpu-host",
+  "throughput": {
+    "prompt_eval_tps": null,
+    "gen_eval_tps": null
+  },
+  "memory": {
+    "peak_rss_str": null
+  },
+  "latency_ms": {
+    "p50": 20376.55,
+    "p95": 25534.54,
+    "mean": 20076.01
+  },
+  "tool_calling": {
+    "format_pass_rate": 91.43,
+    "function_accuracy": 91.43,
+    "argument_accuracy": 88.57,
+    "overall_pass": 88.57
+  },
+  "by_category": {
+    "multiple_function": {
+      "n": 10,
+      "overall_pass": 90.0
+    },
+    "parallel": {
+      "n": 5,
+      "overall_pass": 80.0
+    },
+    "simple": {
+      "n": 20,
+      "overall_pass": 90.0
+    }
+  },
+  "n_cases": 35,
+  "started_at": "2026-05-20T03:38:35Z",
+  "duration_sec": 686.09,
+  "notes": "Speculative decoding on a 4B target with a 0.8B draft on 4-core CPU cgroup: p50 latency increased 1.48x vs std baseline (20.4s vs 13.7s). Overall accuracy dropped 2.9pp (88.6 vs 91.4). The CPU draft+verify cycle cost exceeds the savings at this target size \u2014 published 2.5x speedups are typically on 7B+ targets with much smaller drafts. Anti-pattern at the 4B-class scale."
+}

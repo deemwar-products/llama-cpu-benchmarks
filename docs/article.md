@@ -93,15 +93,26 @@ const winner = computed(() => {
 
 <template v-else>
 
-| Cell | KV | gen tok/s | p50 ms | Overall pass |
-|---|---|---:|---:|---:|
-<tr v-for="c in cells" :key="c.cell_id">
-  <td><code>{{ c.cell_id }}</code></td>
-  <td>{{ c.kv_quant }}</td>
-  <td style="text-align:right">{{ fmt(c.gen_eval_tps, 2) }}</td>
-  <td style="text-align:right">{{ fmt(c.p50_ms, 0) }}</td>
-  <td style="text-align:right">{{ fmt(c.overall_pass, 1) }}%</td>
-</tr>
+<table class="results-table">
+  <thead>
+    <tr>
+      <th align="left">Cell</th>
+      <th align="left">KV</th>
+      <th align="right">gen tok/s</th>
+      <th align="right">p50 ms</th>
+      <th align="right">Overall pass</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr v-for="c in cells" :key="c.cell_id">
+      <td><code>{{ c.cell_id }}</code></td>
+      <td>{{ c.kv_quant }}</td>
+      <td align="right">{{ fmt(c.gen_eval_tps, 2) }}</td>
+      <td align="right">{{ fmt(c.p50_ms, 0) }}</td>
+      <td align="right">{{ fmt(c.overall_pass, 1) }}%</td>
+    </tr>
+  </tbody>
+</table>
 
 **Best tool-calling accuracy:** <code>{{ winner?.cell_id }}</code> at <strong>{{ fmt(winner?.overall_pass, 1) }}%</strong>.
 

@@ -1,9 +1,9 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
-  title: 'llama-local-benchmarks',
+  title: 'I tried 4 LLM speedup techniques on CPU. Three made it slower.',
   description:
-    'Small-model tool-calling benchmarks on commodity CPU hardware — Qwen × Gemma × Phi at Q4_K_M, with and without TurboQuant KV-cache compression.',
+    "A week of benchmarks on a Xeon CPU box. TurboQuant ≠ 8× faster, speculative decoding ≠ universal win, ik_llama.cpp breaks parallel calls. Gemma-4-E4B-it on stock llama.cpp wins. Eleven cells, full source, MIT.",
   base: '/llama-local-benchmarks/',
   cleanUrls: true,
   lastUpdated: true,
